@@ -18,15 +18,15 @@ Use : ./server
 #include "sys/file.h"
 //***    ***////
 
-// cau truc cua channel
-typedef struct {
-	// loai channel : 1: private 2: public
-	int type ; 
-	char name[256];
-} Channel;
-
 //support max 1000 clients
 #define MAX_CLI 1000
+
+// cau truc cua channel
+typedef struct {
+	int type ; // loai channel : 1: private 2: public
+	char name[256]; // ten channel
+} Channel;
+
 //struct users
 typedef struct {
 	char name[256];
@@ -34,6 +34,7 @@ typedef struct {
 	Channel channel;
 	int useFlag;
 } User;
+
 // danh sach users
 User users[MAX_CLI];
 // bien toan cuc i, chi so dat den hien tai cua list users
@@ -207,5 +208,5 @@ void *connection_handler(void *connfd)
 			}
 			pthread_mutex_unlock(&counter_mutex);
 		}
-     return 0;
+    return 0;
 }

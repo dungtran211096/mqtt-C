@@ -43,7 +43,6 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 	// ket noi den server
-	
 	if (connect(socket_desc, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1){
 		printf("%s\n", "Error in connect");
 		return 1;
@@ -51,24 +50,23 @@ int main(int argc, char const *argv[])
 	else { 
 		printf("Connected to server %s:%d\n", inet_ntoa(*(struct in_addr*)&servaddr.sin_addr) , 8888);
 	}
-	
 	// nhap username va gui cho server 
 	char username[256];
 	printf("%s\n", "Nhap username:");
 	fgets(username, sizeof(username), stdin);
-	// write(socket_desc, username , sizeof(username));
-	sendto(socket_desc, username, sizeof(username), 0,  (struct sockaddr*)&servaddr, slen);
-	// nhan lai list user hien tai
+	//gui den server username
+	write(socket_desc, username , sizeof(username));
+	// nhan lai list user hien tai, va in ra man hinh
 	char list_users[1000];
-	// read(socket_desc, list_users, sizeof(list_users));
-	recvfrom(socket_desc, list_users, sizeof(list_users), 0, (struct sockaddr *) &servaddr, &slen );
+	read(socket_desc, list_users, sizeof(list_users));
 	printf("List current users is : %s\n", list_users );
+	// *** nhan va gui tin nhan voi server
 	char send_message[256];
 	char recv_message[256];
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
-	if( pthread_create( &send_thread_id , NULL ,  send_thread_func , (void*) &servaddr) < 0 
-	 || pthread_create( &recv_thread_id , NULL ,  recv_thread_func , (void*) &servaddr) < 0 )
+	if( pthread_create( &send_thread_id , NULL ,  send_thread_func , (void*) &socket_desc) < 0 
+	 || pthread_create( &recv_thread_id , NULL ,  recv_thread_func , (void*) &socket_desc) < 0 )
     	{
       	perror("could not create thread");
       	return 1;
@@ -80,18 +78,19 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 
-void *send_thread_func(void *saddr)
+void *send_thread_func(void *sockfd)
 {
-	struct sockaddr servaddr;
-	servaddr = *(struct sockaddr*) saddr;
+	int sock = *(int *) connfd;
 	char send_message[256];
 	while(1)
 	{	
+		// nhap tin nhan
 		printf("%s", "Enter message: ");
 		fgets(send_message, sizeof(send_message), stdin);
 		send_message[strlen(send_message) - 1] = '\0';
-		// write(sock, send_message , sizeof(send_message));
-		sendto(socket_desc, send_message, sizeof(send_message), 0,  (struct sockaddr*)servaddr, sizeof(*servaddr));
+		// gui tin nhan den server
+		write(sock, send_message , sizeof(send_message));
+		// neu user gui '@' thi  dong ket noi
 		if ( strcmp(send_message, "@") == 0 ) {
 			printf("%s\n", "End connection");
 			break;
@@ -100,13 +99,13 @@ void *send_thread_func(void *saddr)
 	return 0 ;
 }
 
-void *recv_thread_func(void *saddr)
+void *recv_thread_func(void *sockfd)
 {
-	struct sockaddr servaddr;
-	servaddr = *(struct sockaddr*) saddr;
+	int sock = *(int *) connfd;
 	while(1){
 		char recv_message[256];
-		int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
+		// int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
+		read(sock, recv_message , sizeof(recv_message));
 		if (n < 256 ) recv_message[n] = '\0';
 		printf("Thong bao: %s\n", recv_message);
 	}
