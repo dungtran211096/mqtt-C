@@ -162,7 +162,6 @@ void *connection_handler(void *connfd)
 		printf("List current users is : %s\n", list_users );
 		// gui tin nhan cho client
 		write(sock, list_users , sizeof(list_users));
-
 		// nhan dang ky kenh tu client
 		read(sock, channelName, sizeof(channelName));
 		channelName[strlen(channelName) - 1] ='\0';

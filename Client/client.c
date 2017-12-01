@@ -52,7 +52,8 @@ int main(int argc, char const *argv[])
 	}
 	// nhap username va gui cho server 
 	char username[256];
-	printf("%s\n", "Nhap username:");
+	char channelName[256];
+	printf("%s", "Nhap username:");
 	fgets(username, sizeof(username), stdin);
 	//gui den server username
 	write(socket_desc, username , sizeof(username));
@@ -60,6 +61,10 @@ int main(int argc, char const *argv[])
 	char list_users[1000];
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("List current users is : %s\n", list_users );
+	//nhap channel hoac username 
+	printf("%s", "Nhap vao channel hoac username muon chat: " );
+	fgets(channelName, sizeof(channelName), stdin);
+	write(socket_desc, channelName, sizeof(channelName));
 	// *** nhan va gui tin nhan voi server
 	char send_message[256];
 	char recv_message[256];
