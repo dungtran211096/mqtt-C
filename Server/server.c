@@ -153,7 +153,7 @@ void *connection_handler(void *connfd)
 		for ( j = 0; j < i; ++j){
 			if (users[j].useFlag == 1 && j != cur_index){
 				// printf("%d : %s\n",j, users[j].name);
-				strcat(list_users , users[j].channelName);
+				strcat(list_users , users[j].channel.name);
 				strcat(list_users, " ");
 			}
 		}
@@ -168,7 +168,7 @@ void *connection_handler(void *connfd)
 		// thiet lap channel cho users
 		pthread_mutex_lock(&counter_mutex);
 		users[cur_index].channel.name = channelName;
-		user[cur_index].channel.type  = 0 ;
+		users[cur_index].channel.type  = 0 ;
 		pthread_mutex_unlock(&counter_mutex);
 		// xu ly cac tin nhan ma users gui den
 		char message[256];
