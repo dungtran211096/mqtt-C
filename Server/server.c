@@ -17,6 +17,10 @@ Use : ./server
 #include "pthread.h"
 #include "sys/file.h"
 //***    ***////
+//**** cac funtion // ****
+void sendMessagetoChannel(char message[] , int cur_index) ;
+void revcMessagefromChannel(int cur_index);
+//**//********************
 
 //support max 1000 clients
 #define MAX_CLI 1000
@@ -140,23 +144,29 @@ void *connection_handler(void *connfd)
 		pthread_mutex_lock(&counter_mutex);
 
 		// ghi danh sach users vao message gui di
+		int count = 0;
+		strcat(list_users, "List users: ");
 		for ( j = 0; j < i; ++j){
 			if (users[j].useFlag == 1 && j != cur_index){
-				// printf("%d : %s\n",j, users[j].name);
+				count++;
 				strcat(list_users , users[j].name);
 				strcat(list_users, " ");
 			}
 		}
+		if (count == 0 ) strcat(list_users, "None");
 		// them xuong dong trong tin nhan 
 		strcat(list_users, "\n");
 		// ghi danh sach channel vao danh sach gui di
+		count = 0;
+		strcat(list_users, "List channels: ");
 		for ( j = 0; j < i; ++j){
 			if (users[j].useFlag == 1 && j != cur_index){
-				// printf("%d : %s\n",j, users[j].name);
+				count++;
 				strcat(list_users , users[j].channel.name);
 				strcat(list_users, " ");
 			}
 		}
+		if (count == 0 ) strcat(list_users, "None");
 		pthread_mutex_unlock(&counter_mutex);
 		// in tin nhan se duoc gui den client
 		printf("List current users is : %s\n", list_users );
@@ -167,14 +177,13 @@ void *connection_handler(void *connfd)
 		channelName[strlen(channelName) - 1] ='\0';
 		// thiet lap channel cho users
 		pthread_mutex_lock(&counter_mutex);
-		users[cur_index].channel.name = channelName;
+		strcpy(users[cur_index].channel.name, channelName);
 		users[cur_index].channel.type  = 0 ;
 		pthread_mutex_unlock(&counter_mutex);
 		// xu ly cac tin nhan ma users gui den
 		char message[256];
     	while(1)
 		{	
-			printf("%s\n", "waiting for message ..." );
 			// doc tin nhan tu client
 			int n = read(sock, message, sizeof(message));
 			// neu client gui '@' thi dong ket noi
@@ -184,28 +193,71 @@ void *connection_handler(void *connfd)
 				close(sock);
 				break;
 			}
+			// neu user thong bao muon gui file 
+			if (strcmp(message, "#") == 0) {
+				printf("User %s want to send a file\n", users[cur_index].name);
+				//gui thong bao den cac client khac
+				// strcpy(message, "#");
+				sendMessagetoChannel(message, cur_index);
+				// gui ng gui file den cac client khac
+				strcpy(message, users[cur_index].name);
+				printf("Send username\n");
+				sendMessagetoChannel(message, cur_index);
+				// gui ten file den cac client khac
+				// revcMessagefromChannel(cur_index);
+				// Coding is countinue here ... .
+
+
+
+				// .......
+
+				//gui file cho cac client dong y
+
+				// quay lai vong while
+				continue;
+			}			
 			if (n < 256 ) message[n] = '\0';
 			//in ra noi dung tin nhan cua client
 			printf("User %s send message %s \n", users[cur_index].name, message );
-			int k = 0 ;
 			pthread_mutex_lock(&counter_mutex);
+			// tao noi dung tin nhan gui den cac user
 			char send[256];
+			send[0]='\0';
+			strcat(send, users[cur_index].name);
+			strcat(send, ":");
+			strcat(send, message);
 			// gui noi dung tin nhan cua client den cac client cung channel
-			for (k = 0; k <= i - 1 ; k++)
-			{
-				send[0] = '\0';
-				strcat(send, users[cur_index].name);
-				strcat(send, ":");
-				strcat(send, message);
-				strcat(send, " ");
-				if (users[k].useFlag == 1 && k != cur_index){
-					if (k != cur_index){
-						if (strcmp (users[k].channel, users[cur_index].channel) == 0)
-							write(users[k].sockfd , send, strlen(send));
-					}
-				}
-			}
+			sendMessagetoChannel(send, cur_index);
 			pthread_mutex_unlock(&counter_mutex);
 		}
     return 0;
+}
+
+void sendMessagetoChannel(char message[] , int cur_index) {
+	printf("sendMEss(): %s\n", message);
+	int k ;
+	for (k = 0; k <= i - 1 ; k++){
+		if (users[k].useFlag == 1 && k != cur_index){
+			if (k != cur_index){
+				if (strcmp (users[k].channel.name, users[cur_index].channel.name) == 0){
+					write(users[k].sockfd , message, 256);
+					printf("sendMEss() :Sent\n");
+				}
+			}
+		}
+	}
+}
+void revcMessagefromChannel(int cur_index) {
+	char message[256];
+	int k ;
+	for (k = 0; k <= i - 1 ; k++){
+		if (users[k].useFlag == 1 && k != cur_index){
+			if (k != cur_index){
+				if (strcmp (users[k].channel.name, users[cur_index].channel.name) == 0){
+					read(users[k].sockfd , message, 256);
+					printf("Message from uesrs[%d] is %s", k, message);
+				}
+			}
+		}
+	}
 }

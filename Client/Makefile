@@ -16,7 +16,7 @@ OBJ = $(SRC:.c=.o)
 TARGET = client
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
+	$(CC) -pthread $(CFLAGS) -o $(TARGET) $(OBJ)
 
 $(OBJ): $(INCL)
 

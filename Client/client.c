@@ -43,7 +43,7 @@ int main(int argc, char const *argv[])
 		return 1;
 	}
 	// ket noi den server
-	if (connect(socket_desc, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1){
+	if (connect(socket_desc, (struct sockaddr *)&servaddr, slen) == -1){
 		printf("%s\n", "Error in connect");
 		return 1;
 	}
@@ -60,14 +60,12 @@ int main(int argc, char const *argv[])
 	// nhan lai list user hien tai, va in ra man hinh
 	char list_users[1000];
 	read(socket_desc, list_users, sizeof(list_users));
-	printf("List current users is : %s\n", list_users );
+	printf("%s\n", list_users );
 	//nhap channel hoac username 
-	printf("%s", "Nhap vao channel hoac username muon chat: " );
+	printf("%s", "Nhap vao channel muon tham gia: " );
 	fgets(channelName, sizeof(channelName), stdin);
 	write(socket_desc, channelName, sizeof(channelName));
 	// *** nhan va gui tin nhan voi server
-	char send_message[256];
-	char recv_message[256];
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
 	if( pthread_create( &send_thread_id , NULL ,  send_thread_func , (void*) &socket_desc) < 0 
@@ -78,19 +76,19 @@ int main(int argc, char const *argv[])
       }
       // doi thread send ket thuc thi ket thuc chuong trinh
       pthread_join(send_thread_id, NULL);
-      // pthread_join(recv_thread_id, NULL);
+      // vi thread nhan message ko the tu ket thuc => huy thread
+      pthread_cancel(recv_thread_id);
 	close(socket_desc);
 	return 0;
 }
 
 void *send_thread_func(void *sockfd)
 {
-	int sock = *(int *) connfd;
+	int sock = *(int *) sockfd;
 	char send_message[256];
 	while(1)
 	{	
 		// nhap tin nhan
-		printf("%s", "Enter message: ");
 		fgets(send_message, sizeof(send_message), stdin);
 		send_message[strlen(send_message) - 1] = '\0';
 		// gui tin nhan den server
@@ -106,12 +104,26 @@ void *send_thread_func(void *sockfd)
 
 void *recv_thread_func(void *sockfd)
 {
-	int sock = *(int *) connfd;
+	int sock = *(int *) sockfd;
 	while(1){
 		char recv_message[256];
 		// int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
-		read(sock, recv_message , sizeof(recv_message));
+		int n = read(sock, recv_message , sizeof(recv_message));
 		if (n < 256 ) recv_message[n] = '\0';
-		printf("Thong bao: %s\n", recv_message);
+		if (strcmp(recv_message, "#") == 0) {
+			printf("file session\n");
+			n = read(sock, recv_message , sizeof(recv_message));
+			printf("n = %d\n", n);
+			printf("user = %s\n", recv_message);
+			recv_message[strlen(recv_message)] ='\0';
+			printf("user = %s\n", recv_message);
+			printf("User %s want to send file to you, accept ? [y/n]\n", recv_message);
+			// char send_message[256];
+			// printf("%s", "Answer: " );
+			// fgets(send_message, sizeof(send_message), stdin);
+			// write(sock, send_message , sizeof(send_message));
+			continue;
+		}
+		printf("\n%s\n", recv_message);
 	}
 }
