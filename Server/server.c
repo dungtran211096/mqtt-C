@@ -18,7 +18,7 @@ Use : ./server
 #include "sys/file.h"
 //***    ***////
 //**** cac funtion // ****
-void sendMessagetoChannel(char message[] , int cur_index) ;
+void sendMessagetoChannel(char message[] , int cur_index);
 void revcMessagefromChannel(int cur_index);
 //**//********************
 
@@ -193,27 +193,20 @@ void *connection_handler(void *connfd)
 				close(sock);
 				break;
 			}
-			// neu user thong bao muon gui file 
-			if (strcmp(message, "#") == 0) {
-				printf("User %s want to send a file\n", users[cur_index].name);
+			// neu user thong bao muon gui file , noi dung tin nhan co # o truoc
+			if (strlen(message) > 0 && message[0] == '#') {
+				//xoa di dau # o dau string
+				char mess_send[256];
+    			memmove(message, message+1, strlen(message));
+    			message[strlen(message)] = '\0';
+    			printf("User %s want to send file %s\n", users[cur_index].name, message);
+    			sprintf(mess_send, "#%s,%s,%d", users[cur_index].name, message, users[cur_index].sockfd );
+    			printf("Thong tin file gui den cac user la %s\n", mess_send);
 				//gui thong bao den cac client khac
-				// strcpy(message, "#");
-				sendMessagetoChannel(message, cur_index);
-				// gui ng gui file den cac client khac
-				strcpy(message, users[cur_index].name);
-				printf("Send username\n");
-				sendMessagetoChannel(message, cur_index);
-				// gui ten file den cac client khac
-				// revcMessagefromChannel(cur_index);
-				// Coding is countinue here ... .
+				sendMessagetoChannel(mess_send, cur_index);
+				// nhan tin nhan tu client khac
+				revcMessagefromChannel(cur_index);
 
-
-
-				// .......
-
-				//gui file cho cac client dong y
-
-				// quay lai vong while
 				continue;
 			}			
 			if (n < 256 ) message[n] = '\0';
@@ -249,15 +242,46 @@ void sendMessagetoChannel(char message[] , int cur_index) {
 }
 void revcMessagefromChannel(int cur_index) {
 	char message[256];
+	int a[100];
+	int j = 0;
 	int k ;
 	for (k = 0; k <= i - 1 ; k++){
 		if (users[k].useFlag == 1 && k != cur_index){
 			if (k != cur_index){
 				if (strcmp (users[k].channel.name, users[cur_index].channel.name) == 0){
 					read(users[k].sockfd , message, 256);
-					printf("Message from uesrs[%d] is %s", k, message);
+					printf("Message from users[%d] is %s\n", k, message);
+					message[strlen(message)] = '\0';
+					if (strlen[message] == 1 && message[0] = 'y') {
+						a[j] = users[k].sockfd;
+						j++;
+					}
 				}
 			}
 		}
 	}
+}
+void sendFile(int sock, char *filename){
+	FILE *rf = fopen(filename, "rb");
+	char data[1024];
+	while(1) {
+		int j = fread(data, 1, 1024 , rf);
+		if ( j == 0) {
+			data[0] = '\0';
+			j = 1;
+		}
+		int nw = write(sock, data, j);
+		if (nw < 1024) break;
+	}
+    fclose(rf);
+}
+void recvFile(int sock, char *filename){
+	while (1){
+		data[0] = '\0';
+		n = read(socket_desc, data, sizeof(data));
+		int j = fwrite(data, 1, n, wf);
+		if (j < 1024) break;
+	}
+	printf("Downloaded successful filename%s\n", filename );
+	fclose(wf);
 }

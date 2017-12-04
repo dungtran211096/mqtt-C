@@ -110,18 +110,23 @@ void *recv_thread_func(void *sockfd)
 		// int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
 		int n = read(sock, recv_message , sizeof(recv_message));
 		if (n < 256 ) recv_message[n] = '\0';
-		if (strcmp(recv_message, "#") == 0) {
+		if (strlen(recv_message) > 0 && recv_message[0] == '#') {
 			printf("file session\n");
-			n = read(sock, recv_message , sizeof(recv_message));
-			printf("n = %d\n", n);
-			printf("user = %s\n", recv_message);
-			recv_message[strlen(recv_message)] ='\0';
-			printf("user = %s\n", recv_message);
-			printf("User %s want to send file to you, accept ? [y/n]\n", recv_message);
-			// char send_message[256];
-			// printf("%s", "Answer: " );
-			// fgets(send_message, sizeof(send_message), stdin);
-			// write(sock, send_message , sizeof(send_message));
+			// n = read(sock, recv_message , sizeof(recv_message));
+			printf("%s\n", recv_message);
+			memmove(recv_message, recv_message+1, strlen(recv_message));
+			recv_message[strlen(recv_message)] = '\0';
+			char *search = ",";
+			char *sender = strtok(recv_message, search);
+			char *filename = strtok(NULL, search);
+			char *send_sockfd = strtok(NULL, search);
+			int sender_sockfd = atoi(send_sockfd);
+			// printf("%s %s %d\n", sender, filename, sockfd );
+			printf("User %s want to send file %s to you, accept ? [y/n]\n", sender, filename );
+			char send_message[256];
+			printf("%s", "Answer: " );
+			fgets(send_message, sizeof(send_message), stdin);
+			write(sender_sockfd, send_message , sizeof(send_message));
 			continue;
 		}
 		printf("\n%s\n", recv_message);
