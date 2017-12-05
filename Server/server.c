@@ -20,6 +20,9 @@ Use : ./server
 //**** cac funtion // ****
 void sendMessagetoChannel(char message[] , int cur_index);
 void revcMessagefromChannel(int cur_index);
+void sendFile(int sock, char *filename);
+void recvFile(int sock, char *filename);
+void sendFiletoChannel(char *filename, int cur_index);
 //**//********************
 
 //support max 1000 clients
@@ -199,14 +202,19 @@ void *connection_handler(void *connfd)
 				char mess_send[256];
     			memmove(message, message+1, strlen(message));
     			message[strlen(message)] = '\0';
-    			printf("User %s want to send file %s\n", users[cur_index].name, message);
+    			printf("User %s want to send file '%s'\n", users[cur_index].name, message);
     			sprintf(mess_send, "#%s,%s,%d", users[cur_index].name, message, users[cur_index].sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
 				//gui thong bao den cac client khac
 				sendMessagetoChannel(mess_send, cur_index);
-				// nhan tin nhan tu client khac
-				revcMessagefromChannel(cur_index);
-
+				// nhan file tu file sender 
+				printf("Nhan file tu client.. .\n");
+				recvFile(users[cur_index].sockfd, message);
+				printf("Ket thuc nhan file tu client\n");
+				// gui file cho cac client khac
+				printf("Start send file to channel\n");
+				sendFiletoChannel(message, cur_index);
+				printf("End send file to channel\n");
 				continue;
 			}			
 			if (n < 256 ) message[n] = '\0';
@@ -240,23 +248,35 @@ void sendMessagetoChannel(char message[] , int cur_index) {
 		}
 	}
 }
-void revcMessagefromChannel(int cur_index) {
-	char message[256];
-	int a[100];
-	int j = 0;
+// void revcMessagefromChannel(int cur_index) {
+// 	char message[256];
+// 	int a[100];
+// 	int j = 0;
+// 	int k ;
+// 	for (k = 0; k <= i - 1 ; k++){
+// 		if (users[k].useFlag == 1 && k != cur_index){
+// 			if (k != cur_index){
+// 				if (strcmp (users[k].channel.name, users[cur_index].channel.name) == 0){
+// 					read(users[k].sockfd , message, 256);
+// 					printf("Message from users[%d] is %s\n", k, message);
+// 					message[strlen(message)] = '\0';
+// 					if ( (int)strlen[message] == 1 && message[0] = "y") {
+// 						a[j] = users[k].sockfd;
+// 						j++;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+void sendFiletoChannel(char *filename, int cur_index) {
 	int k ;
 	for (k = 0; k <= i - 1 ; k++){
 		if (users[k].useFlag == 1 && k != cur_index){
 			if (k != cur_index){
-				if (strcmp (users[k].channel.name, users[cur_index].channel.name) == 0){
-					read(users[k].sockfd , message, 256);
-					printf("Message from users[%d] is %s\n", k, message);
-					message[strlen(message)] = '\0';
-					if (strlen[message] == 1 && message[0] = 'y') {
-						a[j] = users[k].sockfd;
-						j++;
-					}
-				}
+				printf("Send file to user %d\n", k);
+				sendFile(users[k].sockfd, filename);
+				printf("Done\n");
 			}
 		}
 	}
@@ -274,11 +294,14 @@ void sendFile(int sock, char *filename){
 		if (nw < 1024) break;
 	}
     fclose(rf);
+    printf("Send successful %s\n", filename);
 }
 void recvFile(int sock, char *filename){
+	char data[1024];
+	FILE *wf = fopen(filename, "wb+");
 	while (1){
 		data[0] = '\0';
-		n = read(socket_desc, data, sizeof(data));
+		int n = read(sock, data, sizeof(data));
 		int j = fwrite(data, 1, n, wf);
 		if (j < 1024) break;
 	}

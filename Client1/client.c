@@ -18,7 +18,8 @@ Use : ./client <IP_SERVER>
 // client co 2 luong, luong gui va nhan tin nhan
 void *send_thread_func();
 void *recv_thread_func();
-
+void sendFile(int sock, char *filename);
+void recvFile(int sock, char *filename);
 // main
 int main(int argc, char const *argv[])
 {
@@ -98,6 +99,14 @@ void *send_thread_func(void *sockfd)
 			printf("%s\n", "End connection");
 			break;
 		}
+		if ( send_message[0] == '#' ) {
+			//loai bo dau # o dau tin nhan
+			memmove(send_message, send_message+1, strlen(send_message));
+    		send_message[strlen(send_message)] = '\0';
+    		// send_message luc nay la filename
+    		// send file to server
+    		sendFile(sock , send_message);
+		}
 	}
 	return 0 ;
 }
@@ -122,13 +131,41 @@ void *recv_thread_func(void *sockfd)
 			char *send_sockfd = strtok(NULL, search);
 			int sender_sockfd = atoi(send_sockfd);
 			// printf("%s %s %d\n", sender, filename, sockfd );
-			printf("User %s want to send file %s to you, accept ? [y/n]\n", sender, filename );
-			char send_message[256];
-			printf("%s", "Answer: " );
-			fgets(send_message, sizeof(send_message), stdin);
-			write(sender_sockfd, send_message , sizeof(send_message));
+			printf("User %s send file %s to you\n", sender, filename );
+			// nhan file tu server 
+			recvFile(sender_sockfd, filename);
 			continue;
 		}
 		printf("\n%s\n", recv_message);
 	}
+}
+void recvFile(int sock, char *filename){
+	char data[1024];
+	FILE * wf = fopen(filename, "ab+");
+	int n;
+	while (1){
+		n = read(sock, data, sizeof(data));
+		if (n == 1 && data[0] == '\0') {
+			break;
+		}
+		fwrite(data, 1 ,n, wf);
+		if( n < 1024) break;
+	}
+	printf("Downloaded successful filename %s\n", filename );
+	fclose(wf);
+}
+void sendFile(int sock, char *filename){
+	FILE *rf = fopen(filename, "rb");
+	char data[1024];
+	while(1) {
+		int j = fread(data, 1, 1024 , rf);
+		if ( j == 0) {
+			data[0] = '\0';
+			j = 1;
+		}
+		int nw = write(sock, data, j);
+		if (nw < 1024) break;
+	}
+    fclose(rf);
+    printf("Send successful %s\n", filename);
 }
