@@ -95,7 +95,7 @@ void *send_thread_func(void *sockfd)
 		// gui tin nhan den server
 		write(sock, send_message , sizeof(send_message));
 		// neu user gui '@' thi  dong ket noi
-		if ( strcmp(send_message, "@") == 0 ) {
+		if ( send_message[0] == '@') {
 			printf("%s\n", "End connection");
 			break;
 		}
