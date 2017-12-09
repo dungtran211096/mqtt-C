@@ -284,6 +284,7 @@ void sendFiletoChannel(char *filename, int cur_index) {
 void sendFile(int sock, char *filename){
 	FILE *rf = fopen(filename, "rb");
 	char data[1024];
+	memset(data, 0, sizeof(data));
 	while(1) {
 		int j = fread(data, 1, 1024 , rf);
 		if ( j == 0) {
@@ -298,13 +299,23 @@ void sendFile(int sock, char *filename){
 }
 void recvFile(int sock, char *filename){
 	char data[1024];
-	FILE *wf = fopen(filename, "wb+");
-	while (1){
-		data[0] = '\0';
-		int n = read(sock, data, sizeof(data));
-		int j = fwrite(data, 1, n, wf);
-		if (j < 1024) break;
+	memset(data,0, sizeof(data));
+	int fsize = atoi(data);
+	printf("Length of file: %d\n", fsize);
+	if(fsize == 0){
+		printf("%s\n", "File doesnt exist");
+		printf("%s\n", "----------------");
+		memset(data, 0, sizeof(data));
 	}
-	printf("Downloaded successful filename%s\n", filename );
-	fclose(wf);
+	else{
+		FILE *wf = fopen(filename, "wb+");
+		while (1){
+			data[0] = '\0';
+			int n = read(sock, data, sizeof(data));
+			int j = fwrite(data, 1, n, wf);
+			if (j < 1024) break;
+		}
+		printf("Downloaded successful filename%s\n", filename );
+		fclose(wf);
+	}
 }
