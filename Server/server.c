@@ -205,16 +205,20 @@ void *connection_handler(void *connfd)
     			printf("User %s want to send file '%s'\n", users[cur_index].name, message);
     			sprintf(mess_send, "#%s,%s,%d", users[cur_index].name, message, users[cur_index].sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
+    			printf("%s\n", "------");
 				//gui thong bao den cac client khac
 				sendMessagetoChannel(mess_send, cur_index);
 				// nhan file tu file sender 
 				printf("Nhan file tu client.. .\n");
 				recvFile(users[cur_index].sockfd, message);
 				printf("Ket thuc nhan file tu client\n");
+				printf("%s\n", "-----");
 				// gui file cho cac client khac
 				printf("Start send file to channel\n");
 				sendFiletoChannel(message, cur_index);
 				printf("End send file to channel\n");
+	    		printf("%s\n", "--------------");
+
 				continue;
 			}			
 			if (n < 256 ) message[n] = '\0';
@@ -274,18 +278,41 @@ void sendFiletoChannel(char *filename, int cur_index) {
 	for (k = 0; k <= i - 1 ; k++){
 		if (users[k].useFlag == 1 && k != cur_index){
 			if (k != cur_index){
-				printf("Send file to user %d\n", k);
+				printf("Send file to user %s\n", users[k].name);
 				sendFile(users[k].sockfd, filename);
-				printf("Done\n");
+				printf("Send successful %s\n", filename);
 			}
 		}
 	}
 }
+
 void sendFile(int sock, char *filename){
-	FILE *rf = fopen(filename, "rb");
+	char filesize[1024];
+	memset(filesize, '0', sizeof(filesize));
 	char data[1024];
 	memset(data, 0, sizeof(data));
-	while(1) {
+
+	FILE *rf = fopen(filename, "rb");
+	if(rf == NULL){
+		printf("%s\n", "File doesnt exist\n");
+		printf("%s\n", "----");
+		sprintf(filesize, "0");
+		send(sock, filesize, sizeof(long), 0);
+	}
+	else{
+		printf("%s\n", "file created");
+		memset(filesize, '0', sizeof(filesize));
+
+		/**/
+		fseek(rf, 0, SEEK_END);
+		int fsize = ftell(rf);
+		rewind(rf);
+		/****/
+		sprintf(filesize, "%d", fsize);
+		printf("Size of file: %d\n", fsize);
+		memset(filesize, '0', sizeof(filesize));
+
+		while(1) {
 		int j = fread(data, 1, 1024 , rf);
 		if ( j == 0) {
 			data[0] = '\0';
@@ -293,29 +320,42 @@ void sendFile(int sock, char *filename){
 		}
 		int nw = write(sock, data, j);
 		if (nw < 1024) break;
+		}
+		memset(data, '0', sizeof(data));
+	    
 	}
-    fclose(rf);
-    printf("Send successful %s\n", filename);
+	fclose(rf);
+	
 }
+
+
 void recvFile(int sock, char *filename){
 	char data[1024];
-	memset(data,0, sizeof(data));
+	memset(data, '0', sizeof(data));
+	read(sock, data, sizeof(long));
 	int fsize = atoi(data);
 	printf("Length of file: %d\n", fsize);
 	if(fsize == 0){
 		printf("%s\n", "File doesnt exist");
 		printf("%s\n", "----------------");
-		memset(data, 0, sizeof(data));
+		memset(data, '0', sizeof(data));
 	}
 	else{
-		FILE *wf = fopen(filename, "wb+");
-		while (1){
-			data[0] = '\0';
-			int n = read(sock, data, sizeof(data));
-			int j = fwrite(data, 1, n, wf);
-			if (j < 1024) break;
+		FILE * wf = fopen(filename, "ab+");
+		if(wf == NULL){
+			perror("open file");
+			exit(1);
 		}
-		printf("Downloaded successful filename%s\n", filename );
+		int n;
+		while (1){
+			n = read(sock, data, sizeof(data));
+			if (n == 1 && data[0] == '\0') {
+				break;
+			}
+			fwrite(data, 1 ,n, wf);
+			if( n < 1024) break;
+		}
+		memset(data, '0', sizeof(data));
 		fclose(wf);
 	}
 }

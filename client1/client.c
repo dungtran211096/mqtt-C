@@ -77,6 +77,7 @@ int main(int argc, char const *argv[])
       }
       // doi thread send ket thuc thi ket thuc chuong trinh
       pthread_join(send_thread_id, NULL);
+      pthread_join(recv_thread_id, NULL);
       // vi thread nhan message ko the tu ket thuc => huy thread
       pthread_cancel(recv_thread_id);
 	close(socket_desc);
@@ -140,16 +141,16 @@ void *recv_thread_func(void *sockfd)
 	}
 }
 void recvFile(int sock, char *filename){
-	memset(filename, 0, sizeof(*filename));	
+	memset(filename, '0', sizeof(*filename));	
 	char data[1024];
-//	memset(data, 0, sizeof(data));
+	//memset(data, '0', sizeof(data));
 	read(sock, data, sizeof(long));
 	int fsize = atoi(data);
 	printf("Length of file: %d\n", fsize);
 	if(fsize == 0){
 		printf("%s\n", "File doesnt exist");
 		printf("%s\n", "----------------");
-		memset(data, 0, sizeof(data));
+		memset(data, '0', sizeof(data));
 	}
 	else{
 		FILE * wf = fopen(filename, "ab+");
@@ -157,24 +158,23 @@ void recvFile(int sock, char *filename){
 			perror("open file");
 			exit(1);
 		}
+		printf("%s\n", "file created");
 		int n;
 		while (1){
 			n = read(sock, data, sizeof(data));
-			/*if (n == 1 && data[0] == '\0') {
+			if (n == 1 && data[0] == '\0') {
 				break;
 			}
 			fwrite(data, 1 ,n, wf);
-			if( n < 1024) break;*/
-			if(n > 0){
-				fwrite(data, 1, n, wf);
-				fsize -= n;
-				if(fsize == 0) break; 
+			if( n < 1024) break;
 			}
-		}
+		memset(data, '0', sizeof(data));
 		printf("Downloaded successful filename %s\n", filename );
 		printf("%s\n", "--------------");
 		fclose(wf);
 	}
+		
+
 }
 void sendFile(int sock, char *filename){
 	char filesize[1024];
@@ -190,7 +190,7 @@ void sendFile(int sock, char *filename){
 		send(sock, filesize, sizeof(long), 0);
 	}
 	else{
-		memset(filesize, 0, sizeof(filesize));
+		memset(filesize, '0', sizeof(filesize));
 
 		/**/
 		fseek(rf, 0, SEEK_END);
@@ -199,18 +199,19 @@ void sendFile(int sock, char *filename){
 		/****/
 		sprintf(filesize, "%d", fsize);
 		printf("Size of file: %d\n", fsize);
-		memset(filesize, 0, sizeof(filesize));
+		send(sock, filesize, sizeof(long), 0);
+		memset(filesize, '0', sizeof(filesize));
 
 		while(1) {
-		int j = fread(data, 1, 1024 , rf);
-		if ( j == 0) {
-			data[0] = '\0';
-			j = 1;
+			int j = fread(data, 1, 1024 , rf);
+			if ( j == 0) {
+				data[0] = '\0';
+				j = 1;
+			}
+			int nw = write(sock, data, j);
+			if (nw < 1024) break;
 		}
-		int nw = write(sock, data, j);
-		if (nw < 1024) break;
-		}
-		memset(data, 0, sizeof(data));
+		memset(data, '0', sizeof(data));
 	    fclose(rf);
 	    printf("Send successful %s\n", filename);
 	    printf("%s\n", "--------------");
