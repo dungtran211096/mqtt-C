@@ -51,6 +51,7 @@ int main(int argc, char const *argv[])
 	else { 
 		printf("Connected to server %s:%d\n", inet_ntoa(*(struct in_addr*)&servaddr.sin_addr) , 8888);
 	}
+	printf("%s\n", "--------------");
 	// nhap username va gui cho server 
 	char username[256];
 	char channelName[256];
@@ -66,6 +67,9 @@ int main(int argc, char const *argv[])
 	printf("%s", "Nhap vao channel muon tham gia: " );
 	fgets(channelName, sizeof(channelName), stdin);
 	write(socket_desc, channelName, sizeof(channelName));
+	printf("Gui File dung cu phap \'#file_name\'\n");
+
+	printf("%s\n", "----------------");
 	// *** nhan va gui tin nhan voi server
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
@@ -98,7 +102,7 @@ void *send_thread_func(void *sockfd)
 		// neu user gui '@' thi  dong ket noi
 		if ( send_message[0] == '@') {
 			printf("%s\n", "End connection");
-			break;
+			exit(1);
 		}
 		if ( send_message[0] == '#' ) {
 			//loai bo dau # o dau tin nhan
@@ -119,7 +123,6 @@ void *recv_thread_func(void *sockfd)
 		char recv_message[256];
 		// int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
 		int n = read(sock, recv_message , sizeof(recv_message));
-		if (n < 256 ) recv_message[n] = '\0';
 		if (strlen(recv_message) > 0 && recv_message[0] == '#') {
 			printf("file session\n");
 			// n = read(sock, recv_message , sizeof(recv_message));
@@ -132,19 +135,23 @@ void *recv_thread_func(void *sockfd)
 			char *send_sockfd = strtok(NULL, search);
 			int sender_sockfd = atoi(send_sockfd);
 			// printf("%s %s %d\n", sender, filename, sockfd );
-			printf("User %s send file %s to you\n", sender, filename );
+			printf("User %s send file %s sender_sockfd %d to you\n", sender, filename, sender_sockfd );
 			// nhan file tu server 
-			recvFile(sender_sockfd, filename);
+			printf("%d\n", sock);
+			recvFile(sock, filename);
 			continue;
 		}
-		printf("\n%s\n", recv_message);
+		else if (n < 256 ) recv_message[n] = '\0';
+
+		else printf("\n%s\n", recv_message);
+
 	}
 }
 void recvFile(int sock, char *filename){
-	memset(filename, '0', sizeof(*filename));	
 	char data[1024];
-	//memset(data, '0', sizeof(data));
-	read(sock, data, sizeof(long));
+	memset(data, '0', sizeof(long));
+	/*Check size of file*/
+	read(sock, data, strlen(data));
 	int fsize = atoi(data);
 	printf("Length of file: %d\n", fsize);
 	if(fsize == 0){
@@ -158,23 +165,30 @@ void recvFile(int sock, char *filename){
 			perror("open file");
 			exit(1);
 		}
+	
 		printf("%s\n", "file created");
 		int n;
 		while (1){
 			n = read(sock, data, sizeof(data));
-			if (n == 1 && data[0] == '\0') {
-				break;
+			// if (n == 1 && data[0] == '\0') {
+			// 	break;
+			// }
+			// fwrite(data, 1 ,n, wf);
+			// if( n < 1024) break;
+			if(n > 0){
+				printf("n: %d\n", n);
+				fwrite(data, 1, n, wf);
+				fsize -= n;
+				if(fsize == 0) break;
+				printf("xong roi\n");
 			}
-			fwrite(data, 1 ,n, wf);
-			if( n < 1024) break;
-			}
-		memset(data, '0', sizeof(data));
+		}
+		//memset(data, '0', sizeof(data));
 		printf("Downloaded successful filename %s\n", filename );
 		printf("%s\n", "--------------");
+		
 		fclose(wf);
 	}
-		
-
 }
 void sendFile(int sock, char *filename){
 	char filesize[1024];
@@ -212,9 +226,8 @@ void sendFile(int sock, char *filename){
 			if (nw < 1024) break;
 		}
 		memset(data, '0', sizeof(data));
-	    fclose(rf);
-	    printf("Send successful %s\n", filename);
-	    printf("%s\n", "--------------");
 	}
-	
-}
+	fclose(rf);
+	printf("Send successful %s\n", filename);
+	printf("%s\n", "--------------");
+	}

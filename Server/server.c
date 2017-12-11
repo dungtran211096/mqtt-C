@@ -202,6 +202,7 @@ void *connection_handler(void *connfd)
 				char mess_send[256];
     			memmove(message, message+1, strlen(message));
     			message[strlen(message)] = '\0';
+    			printf("%s\n", "---------------");
     			printf("User %s want to send file '%s'\n", users[cur_index].name, message);
     			sprintf(mess_send, "#%s,%s,%d", users[cur_index].name, message, users[cur_index].sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
@@ -300,7 +301,6 @@ void sendFile(int sock, char *filename){
 		send(sock, filesize, sizeof(long), 0);
 	}
 	else{
-		printf("%s\n", "file created");
 		memset(filesize, '0', sizeof(filesize));
 
 		/**/
@@ -308,9 +308,10 @@ void sendFile(int sock, char *filename){
 		int fsize = ftell(rf);
 		rewind(rf);
 		/****/
+
 		sprintf(filesize, "%d", fsize);
 		printf("Size of file: %d\n", fsize);
-		memset(filesize, '0', sizeof(filesize));
+		send(sock, filesize, sizeof(long), 0);
 
 		while(1) {
 		int j = fread(data, 1, 1024 , rf);
