@@ -105,7 +105,7 @@ void *send_thread_func(void *sockfd)
     		send_message[strlen(send_message)] = '\0';
     		// send_message luc nay la filename
     		// send file to server
-    		sendFile(sock , send_message);
+    		sendFile(sock, send_message);
 		}
 	}
 	return 0 ;
@@ -128,12 +128,13 @@ void *recv_thread_func(void *sockfd)
 			char *search = ",";
 			char *sender = strtok(recv_message, search);
 			char *filename = strtok(NULL, search);
-			char *send_sockfd = strtok(NULL, search);
-			int sender_sockfd = atoi(send_sockfd);
+			// char *send_sockfd = strtok(NULL, search);
+			// int sender_sockfd = atoi(send_sockfd);
 			// printf("%s %s %d\n", sender, filename, sockfd );
 			printf("User %s send file %s to you\n", sender, filename );
 			// nhan file tu server 
-			recvFile(sender_sockfd, filename);
+			recvFile(sock, filename);
+			printf("recvFile is done !!!\n");
 			continue;
 		}
 		printf("\n%s\n", recv_message);
@@ -145,10 +146,11 @@ void recvFile(int sock, char *filename){
 	int n;
 	while (1){
 		n = read(sock, data, sizeof(data));
+		printf("Nhan duoc %d byte \n", n);
 		if (n == 1 && data[0] == '\0') {
 			break;
 		}
-		fwrite(data, 1 ,n, wf);
+		fwrite(data, 1, n, wf);
 		if( n < 1024) break;
 	}
 	printf("Downloaded successful filename %s\n", filename );
@@ -156,7 +158,20 @@ void recvFile(int sock, char *filename){
 }
 void sendFile(int sock, char *filename){
 	FILE *rf = fopen(filename, "rb");
+	int fsize;
+	if ( rf ) {
+		fseek(rf, 0, SEEK_END);
+		fsize = ftell(rf);
+		rewind(rf);
+	}
+	else {
+		puts("File does not exist");
+	}
 	char data[1024];
+	sprintf(data, "%d", fsize);
+	// send file size to server 
+	write(sock, data, sizeof(data));
+	//
 	while(1) {
 		int j = fread(data, 1, 1024 , rf);
 		if ( j == 0) {
