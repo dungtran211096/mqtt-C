@@ -54,7 +54,7 @@ int main(int argc, char const *argv[])
 	}
 	// nhap username va gui cho server 
 	char username[256];
-	char channelName[256];
+	// char channelName[256];
 	printf("%s", "Nhap username:");
 	fgets(username, sizeof(username), stdin);
 	//gui den server username
@@ -64,9 +64,14 @@ int main(int argc, char const *argv[])
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("%s\n", list_users );
 	//nhap channel hoac username 
-	printf("Nhap channel, chon $username de chat rieng voi user:");
-	fgets(channelName, sizeof(channelName), stdin);
-	write(socket_desc, channelName, sizeof(channelName));
+	/////
+
+	// printf("Nhap channel, chon $username de chat rieng voi user:");
+	// fgets(channelName, sizeof(channelName), stdin);
+	// write(socket_desc, channelName, sizeof(channelName));
+
+	////
+
 	// *** nhan va gui tin nhan voi server
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
@@ -88,16 +93,12 @@ void *send_thread_func(void *sockfd)
 {
 	int sock = *(int *) sockfd;
 	char send_message[256];
-	printf("Cuoc tro chuyen bat dau, de gui file, an #filename ...\n");
+	printf("Cuoc tro chuyen bat dau ...\n> tin nhan dau tien la dang ky channel , neu muon chat rieng, go $username\n> trong qua trinh chat, de gui file, an #filename ...\n");
 	while(1)
 	{	
 		// nhap tin nhan
-		printf("MEss: ");
 		fgets(send_message, sizeof(send_message), stdin);
 		send_message[strlen(send_message) - 1] = '\0';
-
-
-		printf("Send mess = '%s'\n", send_message );
 		// gui tin nhan den server
 		if (strlen(send_message) > 0 && send_message[0] == '!'){
 			printf("xxxx\n");
@@ -165,8 +166,6 @@ void *recv_thread_func(void *sockfd)
 		printf("%s\n", recv_message);
 	}
 }
-
-
 /////////////////////////////////
 void recvFile(int sock, char *filename){
 	char data[1024];
