@@ -15,6 +15,7 @@ Use : ./client <IP_SERVER>
 #include "pthread.h"
 //************////
 
+char invite_cache[256];
 // client co 2 luong, luong gui va nhan tin nhan
 void *send_thread_func();
 void *recv_thread_func();
@@ -63,22 +64,22 @@ int main(int argc, char const *argv[])
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("%s\n", list_users );
 	//nhap channel hoac username 
-	printf("%s", "Nhap vao channel muon tham gia: " );
+	printf("Nhap channel, chon $username de chat rieng voi user:");
 	fgets(channelName, sizeof(channelName), stdin);
 	write(socket_desc, channelName, sizeof(channelName));
 	// *** nhan va gui tin nhan voi server
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
 	if( pthread_create( &send_thread_id , NULL ,  send_thread_func , (void*) &socket_desc) < 0 
-	 || pthread_create( &recv_thread_id , NULL ,  recv_thread_func , (void*) &socket_desc) < 0 )
-    	{
+	||  pthread_create( &recv_thread_id , NULL ,  recv_thread_func , (void*) &socket_desc) < 0 )
+    {
       	perror("could not create thread");
       	return 1;
-      }
-      // doi thread send ket thuc thi ket thuc chuong trinh
-      pthread_join(send_thread_id, NULL);
-      // vi thread nhan message ko the tu ket thuc => huy thread
-      pthread_cancel(recv_thread_id);
+    }
+  	// doi thread send ket thuc thi ket thuc chuong trinh
+  	pthread_join(send_thread_id, NULL);
+ 	 // vi thread nhan message ko the tu ket thuc => huy thread
+  	pthread_cancel(recv_thread_id);
 	close(socket_desc);
 	return 0;
 }
@@ -87,13 +88,27 @@ void *send_thread_func(void *sockfd)
 {
 	int sock = *(int *) sockfd;
 	char send_message[256];
+	printf("Cuoc tro chuyen bat dau, de gui file, an #filename ...\n");
 	while(1)
 	{	
 		// nhap tin nhan
+		printf("MEss: ");
 		fgets(send_message, sizeof(send_message), stdin);
 		send_message[strlen(send_message) - 1] = '\0';
+
+
+		printf("Send mess = '%s'\n", send_message );
 		// gui tin nhan den server
+		if (strlen(send_message) > 0 && send_message[0] == '!'){
+			printf("xxxx\n");
+			strcat(send_message, ",");
+			strcat(send_message, invite_cache);
+			printf("Tin nhan dong y = '%s'\n", send_message );
+			printf("Sent !!!\n");
+		}
+
 		write(sock, send_message , sizeof(send_message));
+
 		// neu user gui '@' thi  dong ket noi
 		if ( send_message[0] == '@') {
 			printf("%s\n", "End connection");
@@ -106,6 +121,7 @@ void *send_thread_func(void *sockfd)
     		// send_message luc nay la filename
     		// send file to server
     		sendFile(sock, send_message);
+    		continue;
 		}
 	}
 	return 0 ;
@@ -115,31 +131,43 @@ void *recv_thread_func(void *sockfd)
 {
 	int sock = *(int *) sockfd;
 	while(1){
+
 		char recv_message[256];
-		// int n = recvfrom(socket_desc, recv_message, sizeof(recv_message), 0, (struct sockaddr *)servaddr, & sizeof(*servaddr) );
 		int n = read(sock, recv_message , sizeof(recv_message));
 		if (n < 256 ) recv_message[n] = '\0';
+
+
 		if (strlen(recv_message) > 0 && recv_message[0] == '#') {
 			printf("file session\n");
 			// n = read(sock, recv_message , sizeof(recv_message));
 			printf("%s\n", recv_message);
-			memmove(recv_message, recv_message+1, strlen(recv_message));
+			memmove(recv_message, recv_message + 1, strlen(recv_message));
 			recv_message[strlen(recv_message)] = '\0';
 			char *search = ",";
 			char *sender = strtok(recv_message, search);
 			char *filename = strtok(NULL, search);
-			// char *send_sockfd = strtok(NULL, search);
-			// int sender_sockfd = atoi(send_sockfd);
-			// printf("%s %s %d\n", sender, filename, sockfd );
 			printf("User %s send file %s to you\n", sender, filename );
 			// nhan file tu server 
 			recvFile(sock, filename);
 			printf("recvFile is done !!!\n");
 			continue;
 		}
-		printf("\n%s\n", recv_message);
+
+		if ( strlen(recv_message) > 0 && recv_message[0] == '!' ) {
+			printf("An invite message ... \n");
+			memmove(recv_message, recv_message + 1, strlen(recv_message));
+			recv_message[strlen(recv_message)] = '\0';
+			strcpy(invite_cache, recv_message );
+			printf("User %s invite you chat with him , accept ? [y/n]\n", recv_message);
+			continue;
+		}
+
+		printf("%s\n", recv_message);
 	}
 }
+
+
+/////////////////////////////////
 void recvFile(int sock, char *filename){
 	char data[1024];
 	FILE * wf = fopen(filename, "ab+");

@@ -1,6 +1,4 @@
 /**
-Fullname : Do Xuan Quy
-MSV: 14020634
 Desciption : MQTT Broker Server
 Use : ./server
 */
@@ -23,6 +21,10 @@ void revcMessagefromChannel(int cur_index);
 void sendFile(int sock, char *filename);
 void recvFile(int sock, char *filename);
 void sendFiletoChannel(char *filename, int cur_index);
+void sendUserList(int sock , int cur_index);
+int findIndex ();
+void setPrivateChannel(int index1, int index2 );
+int findUserIndexbyName(char *name);
 //**//********************
 
 //support max 1000 clients
@@ -113,21 +115,14 @@ void *connection_handler(void *connfd)
 		// doc username tu client 
 		read(sock, username, sizeof(username));
 		username[strlen(username) - 1] = '\0';
+		printf("Client username : %s\n", username);
+
+
+
 		// khoa danh sach users
 		pthread_mutex_lock(&counter_mutex);
-		printf("Client username : %s\n", username);
 		//**** tim index de luu users
-		int t ;
-		int cur_index = -1;
-		for (t = 0; t < i; t++){
-			if ( users[t].useFlag == 0){
-				cur_index = t;
-			}
-		}
-		if (cur_index == -1 ) {
-			cur_index = i;
-			i++;
-		};
+		int cur_index = findIndex();
 		// in ra index tim duoc 
 		printf("Current index is  %d\n", cur_index );
 		// dien thong tin vao slot tim duoc
@@ -138,79 +133,40 @@ void *connection_handler(void *connfd)
 		// in ra danh sach users tren server hien tai
 		printf("user[%d]: %s\n", cur_index ,users[cur_index].name );
 		pthread_mutex_unlock(&counter_mutex);
-		printf("%s\n", "List current user: ");
+
+
 
 		// tao message bao gom cac user va channel cho users
 		int j;
-		char list_users[1000];
-		strcpy(list_users,  "");
-		pthread_mutex_lock(&counter_mutex);
-
-		// ghi danh sach users vao message gui di
-		int count = 0;
-		strcat(list_users, "List users: \n");
-		for ( j = 0; j < i; ++j){
-			if (users[j].useFlag == 1 && j != cur_index){
-				count++;
-				strcat(list_users , users[j].name);
-				strcat(list_users, " in ");
-				if ( strlen(users[j].channel.name) > 0 ){
-					strcat(list_users , users[j].channel.name);
-				}
-				else {
-					strcat(list_users, "None");
-				}
-				// them xuong dong trong tin nhan 
-				strcat(list_users, "\n");
-			}
-		}
-		if (count == 0 ) strcat(list_users, "None");
-
-		// ghi danh sach channel vao danh sach gui di
-		// count = 0;
-		// strcat(list_users, "List channels: ");
-		// for ( j = 0; j < i; ++j){
-		// 	if (users[j].useFlag == 1 && j != cur_index ){
-		// 		count++;
-		// 		strcat(list_users , users[j].channel.name);
-		// 		strcat(list_users, " ");
-		// 	}
-		// }
-		// if (count == 0 ) strcat(list_users, "None");
-		pthread_mutex_unlock(&counter_mutex);
-		// in tin nhan se duoc gui den client
-		printf("List current users is : %s\n", list_users );
-		// gui tin nhan cho client
-		write(sock, list_users , sizeof(list_users));
+		sendUserList(users[cur_index].sockfd, cur_index);
 		// nhan dang ky kenh tu client
 		//***************************************************
 		// Lua chon chat rieng voi user hoac join vao 1 kenh chat
 		read(sock, channelName, sizeof(channelName));
+
+
 		if (strlen(channelName) > 0 && channelName[0] == '$'){
 			printf("User want to private channel\n");
 			memmove(channelName, channelName + 1, strlen(channelName));
-			channelName[strlen(channelName) -1 ] = '\0';
+			channelName[strlen(channelName) - 1 ] = '\0';
 			printf("That username is '%s'\n", channelName);
-			char pri_channel[256];
-			sprintf(pri_channel, "%s%d", "private", cur_index);
-			printf("Create channel %s for that couple\n", pri_channel);
-			strcpy(users[cur_index].channel.name, pri_channel);
-			users[cur_index].channel.type = 1;
-			printf("User %s is in channel '%s'\n", users[cur_index].name , users[cur_index].channel.name);
+	
 			// find user with the name client want
 			pthread_mutex_lock(&counter_mutex);
 			for (j = 0; j < i; j++){
 				printf("Check user : user[%d].name = '%s'\n", j , users[j].name);
 				if (strcmp(channelName, users[j].name) == 0 ){
-					strcpy(users[j].channel.name, pri_channel);
-					printf("User %s is in channel '%s'\n", users[j].name , users[j].channel.name);
-					users[j].channel.type = 1;
+					// gui yeu cau den user kia
+					char invite_mess[256];
+					sprintf(invite_mess, "!%s", users[cur_index].name);
+					write(users[j].sockfd, invite_mess, sizeof(invite_mess));
 				}
 			}
-			pthread_mutex_unlock(&counter_mutex);
+			pthread_mutex_unlock(&counter_mutex);	
 		}
-		else { // khi nguoi dung muon join vao nhom 
-			channelName[strlen(channelName) -1 ] = '\0';
+		else { 
+			// khi nguoi dung muon join vao nhom 
+			channelName[strlen(channelName) - 1 ] = '\0';
 			strcpy(users[cur_index].channel.name, channelName);
 			users[cur_index].channel.type = 0;
 			printf("public channel '%s'\n", users[cur_index].channel.name);
@@ -229,6 +185,30 @@ void *connection_handler(void *connfd)
 				close(sock);
 				break;
 			}
+
+			if ( strlen(message) > 0 && message[0] == '!' ){
+				printf("xxxxx\n");
+				printf("message = '%s'\n", message );
+				memmove(message, message + 1, strlen(message));
+				message[strlen(message)] = '\0';
+				printf("Message after trim = '%s'\n", message );
+				/////
+				if (message[0] == 'y') {
+					//find user
+					strtok(message, ",");
+					char *invite_user = strtok(NULL, ",");
+					printf("invite user = '%s'\n", invite_user );
+					int inv_user_index = findUserIndexbyName( invite_user );
+					if (inv_user_index == -1 ) {
+						printf("Cant find user xx!\n");
+					}
+					setPrivateChannel(inv_user_index, cur_index);
+					sprintf(message, "User %s accept chat with you", users[cur_index].name);
+					write(users[inv_user_index].sockfd, message, sizeof(message));
+				}
+				continue;
+			}
+
 			// neu user thong bao muon gui file , noi dung tin nhan co # o truoc
 			if (strlen(message) > 0 && message[0] == '#') {
 				//xoa di dau # o dau string
@@ -249,18 +229,21 @@ void *connection_handler(void *connfd)
 				sendFiletoChannel(message, cur_index);
 				printf("End send file to channel\n");
 				continue;
-			}			
+			}		
+
 			if (n < 256 ) message[n] = '\0';
 			//in ra noi dung tin nhan cua client
-			printf("User %s send message %s \n", users[cur_index].name, message );
+			printf("User '%s' send message '%s' \n", users[cur_index].name, message );
 			pthread_mutex_lock(&counter_mutex);
 			// tao noi dung tin nhan gui den cac user
 			char send[256];
-			send[0]='\0';
+			send[0] = '\0';
 			strcat(send, users[cur_index].name);
 			strcat(send, ":");
 			strcat(send, message);
+			printf("message win send = '%s'\n", send );
 			// gui noi dung tin nhan cua client den cac client cung channel
+			printf("sssss\n");
 			sendMessagetoChannel(send, cur_index);
 			pthread_mutex_unlock(&counter_mutex);
 		}
@@ -281,7 +264,6 @@ void sendMessagetoChannel(char message[] , int cur_index) {
 		}
 	}
 }
-
 void sendFiletoChannel(char *filename, int cur_index) {
 	int k ;
 	for (k = 0; k <= i - 1 ; k++){
@@ -328,4 +310,70 @@ void recvFile(int sock, char *filename){
 	}
 	printf("Downloaded successful filename%s\n", filename );
 	fclose(wf);
+}
+void sendUserList( int sock , int cur_index) {
+	int j;
+	char list_users[1000];
+	pthread_mutex_lock(&counter_mutex);
+	// ghi danh sach users vao message gui di
+	int count = 0;
+	strcpy(list_users, "");
+	strcat(list_users, "List users: \n");
+	for ( j = 0; j < i; ++j){
+		if (users[j].useFlag == 1 && j != cur_index){
+			count++;
+			strcat(list_users , users[j].name);
+			strcat(list_users, " in ");
+			if ( strlen(users[j].channel.name) > 0 ){
+				strcat(list_users , users[j].channel.name);
+			}
+			else {
+				strcat(list_users, "None");
+			}
+			// them xuong dong trong tin nhan 
+			strcat(list_users, "\n");
+		}
+	}
+	if (count == 0 ) strcat(list_users, "Hien tai chua co user nao !");
+	pthread_mutex_unlock(&counter_mutex);
+	// in tin nhan se duoc gui den client
+	// gui tin nhan cho client
+	write(sock, list_users , sizeof(list_users));
+}
+int findIndex (){
+	int t ;
+	int cur_index = -1;
+	for (t = 0; t < i; t++){
+		if ( users[t].useFlag == 0){
+			cur_index = t;
+		}
+	}
+	if (cur_index == -1 ) {
+		cur_index = i;
+		i++;
+	};
+	return cur_index;
+}
+void setPrivateChannel(int index1, int index2 ){
+	char pri_channel[256];
+	sprintf(pri_channel, "%s%d%d", "private", index1, index2);
+	strcpy(users[index1].channel.name, pri_channel);
+	users[index1].channel.type = 1;
+	strcpy(users[index2].channel.name, pri_channel);
+	users[index2].channel.type = 1;
+	printf("User '%s' in channel '%s'\n", users[index1].name, users[index1].channel.name );
+	printf("User '%s' in channel '%s'\n", users[index2].name, users[index2].channel.name );
+}
+int findUserIndexbyName(char *name){
+	pthread_mutex_lock(&counter_mutex);
+	int j;
+	for (j = 0; j < i; ++j)
+	{
+		if (strcmp(users[j].name, name) == 0){
+			pthread_mutex_unlock(&counter_mutex);
+			return j;
+		}
+	}
+	pthread_mutex_unlock(&counter_mutex);
+	return -1;
 }
