@@ -215,7 +215,6 @@ void sendFile(int sock, char *filename){
 				j = 1;
 			}
 			int nw = write(sock, data, j);
-			printf("nw = %d\n", nw);
 			if (nw < 1024) break;
 		}
 	    fclose(rf);
