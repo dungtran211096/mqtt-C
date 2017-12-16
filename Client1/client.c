@@ -109,7 +109,6 @@ void *send_thread_func(void *sockfd)
 		// nhap tin nhan
 		fgets(send_message, sizeof(send_message), stdin);
 		send_message[strlen(send_message) - 1] = '\0';
-		write(sock, send_message , sizeof(send_message));
 
 		// gui tin nhan den server
 		if (strlen(send_message) > 0 && send_message[0] == '!'){
@@ -119,18 +118,15 @@ void *send_thread_func(void *sockfd)
 			printf("Tin nhan dong y = '%s'\n", send_message );
 			printf("Sent !!!\n");
 		}
-
+		write(sock, send_message , sizeof(send_message));
 		// neu user gui '@' thi  dong ket noi
-		else if ( send_message[0] == '@') {
+		if( send_message[0] == '@') {
 			printf("%s\n", "End connection");
 			exit(1)	;
 		}
 		else if ( send_message[0] == '#' ) {
-			//loai bo dau # o dau tin nhan
 			memmove(send_message, send_message+1, strlen(send_message));
     		send_message[strlen(send_message)] = '\0';
-    		// send_message luc nay la filename
-    		// send file to server
     		sendFile(sock, send_message);
     		continue;
 		}
@@ -170,6 +166,7 @@ void *recv_thread_func(void *sockfd)
 			memmove(recv_message, recv_message + 1, strlen(recv_message));
 			recv_message[strlen(recv_message)] = '\0';
 			strcpy(invite_cache, recv_message );
+			printf("Set invite_cache = '%s'\n", invite_cache );
 			printf("User %s invite you chat with him , accept ? [y/n]\n", recv_message);
 			continue;
 		}

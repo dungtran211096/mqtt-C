@@ -116,7 +116,7 @@ void *connection_handler(void *connfd)
 		int sock = *(int *) connfd;
 		// khai bao cac bien
 		char username[256]; 
-		char channelName[256];
+		// char channelName[256];
 		// doc username tu client 
 		read(sock, username, sizeof(username));
 		username[strlen(username) - 1] = '\0';
@@ -132,7 +132,7 @@ void *connection_handler(void *connfd)
 		strcpy(users[cur_index].name, username);
 		users[cur_index].useFlag = 1;
 		users[cur_index].sockfd = sock;
-		users[cur_index].channel.name[0] = '\0';
+		strcpy(users[cur_index].channel.name, "");
 		// in ra danh sach users tren server hien tai
 		printf("user[%d]: %s\n", cur_index ,users[cur_index].name );
 		pthread_mutex_unlock(&counter_mutex);
@@ -143,27 +143,56 @@ void *connection_handler(void *connfd)
 		// nhan dang ky kenh tu client
 		//***************************************************
 		// Lua chon chat rieng voi user hoac join vao 1 kenh chat
-		while (1) {
-			read(sock, channelName, sizeof(channelName));
-			channelName[strlen(channelName)] = '\0';
-			printf("channel  = '%s'\n", channelName );
+		// while (1) {
+		// 	printf("users[cur_index].channel name = '%s'\n", users[cur_index].channel.name );
+		// 	read(sock, channelName, sizeof(channelName));
+		// 	channelName[strlen(channelName)] = '\0';
+		// 	printf("channel  = '%s'\n", channelName );
+		// 	if ( strlen(channelName) >= 0 && channelName[0] == '!'){
+		// 		printf("SSSSSSS\n");
+		// 		int ss = strcmp(users[cur_index].channel.name, "");
+		// 		printf("ss = %d\n", ss );
+		// 		if ( ss != 0 ){
+		// 			printf("XXXXX\n");
+		// 			sendMessagetoChannel(users[cur_index].channel.name ,cur_index);
+		// 			break;
+		// 		}
+		// 	}
+		// }
+		//***************************************************
+		// xu ly cac tin nhan ma users gui den
+		char message[256];
+    	while(1)
+		{	
+			// doc tin nhan tu client
+			int n = read(sock, message, sizeof(message));
 
-			if (strlen(channelName) > 0 && channelName[0] == '$'){
-				rFCaTrim(channelName);
-				printf("find users '%s'\n", channelName);
-				// find user with the name client want
-				int recv_index = findUserIndexbyName(channelName);
-				if (recv_index == -1) printf("Khong tim thay user\n");
-				sendInvite( cur_index, recv_index );
+
+			// neu client gui '@' thi dong ket noi
+			if (message[0] == '@') {
+				printf("User %s end connect\n", users[cur_index].name);
+				users[cur_index].useFlag = 0;
+				close(sock);
 				break;
 			}
-			else { 
+
+			if (strlen(message) > 0 && message[0] == '$'){
+				rFCaTrim(message);
+				printf("find users '%s'\n", message);
+				// find user with the name client want
+				int recv_index = findUserIndexbyName(message);
+				if (recv_index == -1) printf("Khong tim thay user\n");
+				sendInvite( cur_index, recv_index );
+				continue;
+			}
+			if (strlen(message) > 0 && message[0] == '%'){ 
+				rFCaTrim(message);
 				// khi nguoi dung muon join vao nhom 
-				int index = findIndexbyCName(channelName);
-				printf("index =%d\n", index );
+				int index = findIndexbyCName(message);
+				printf("190 :index = %d\n", index );
 				if (index != -1){
 					if ( users[index].channel.type == 0) {
-						setPublicChannel(cur_index , channelName);
+						setPublicChannel(cur_index , message);
 						break;
 					}
 					else {
@@ -177,33 +206,24 @@ void *connection_handler(void *connfd)
 					char mess[256];
 					strcpy(mess, "Dang ky channel thanh cong");
 					write(sock, mess ,sizeof(mess));
-					setPublicChannel(cur_index , channelName);
-					break;
+					setPublicChannel(cur_index , message);
+					continue;				
 				}
 			}
-		}
-		//***************************************************
-		// xu ly cac tin nhan ma users gui den
-		char message[256];
-    	while(1)
-		{	
-			// doc tin nhan tu client
-			int n = read(sock, message, sizeof(message));
-			// neu client gui '@' thi dong ket noi
-			if (message[0] == '@') {
-				printf("User %s end connect\n", users[cur_index].name);
-				users[cur_index].useFlag = 0;
-				close(sock);
-				break;
-			}
+
 
 			if ( strlen(message) > 0 && message[0] == '!' ){
 				rFCaTrim(message);
+				printf(" !!! mess = '%s'\n", message);
 				if (message[0] == 'y') {
 					//find user
 					strtok(message, ",");
 					char *invite_user = strtok(NULL, ",");
+					if (invite_user == NULL) {
+						continue;
+					}
 					printf("invite user = '%s'\n", invite_user );
+
 					int inv_user_index = findUserIndexbyName( invite_user );
 					if (inv_user_index == -1 ) {
 						printf("Cant find user xx!\n");
