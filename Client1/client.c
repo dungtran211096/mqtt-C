@@ -21,6 +21,7 @@ void *send_thread_func();
 void *recv_thread_func();
 void sendFile(int sock, char *filename);
 void recvFile(int sock, char *filename);
+void rFCaTrim( char str[]);
 // main
 int main(int argc, char const *argv[])
 {
@@ -64,14 +65,6 @@ int main(int argc, char const *argv[])
 	char list_users[1000];
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("%s\n", list_users );
-	//nhap channel hoac username 
-	/////
-
-	// printf("Nhap channel, chon $username de chat rieng voi user:");
-	// fgets(channelName, sizeof(channelName), stdin);
-	// write(socket_desc, channelName, sizeof(channelName));
-
-	////
 
 	// *** nhan va gui tin nhan voi server
 	//tao thread nhan message va thread viet message
@@ -112,11 +105,13 @@ void *send_thread_func(void *sockfd)
 
 		// gui tin nhan den server
 		if (strlen(send_message) > 0 && send_message[0] == '!'){
-			printf("xxxx\n");
-			strcat(send_message, ",");
-			strcat(send_message, invite_cache);
-			printf("Tin nhan dong y = '%s'\n", send_message );
-			printf("Sent !!!\n");
+			char str[256];
+			strcpy(str, send_message);
+			rFCaTrim(str);
+			if (strcmp(str, "list") != 0){
+				strcat(send_message, ",");
+				strcat(send_message, invite_cache);
+			}
 		}
 		write(sock, send_message , sizeof(send_message));
 		// neu user gui '@' thi  dong ket noi
@@ -125,7 +120,7 @@ void *send_thread_func(void *sockfd)
 			exit(1)	;
 		}
 		else if ( send_message[0] == '#' ) {
-			memmove(send_message, send_message+1, strlen(send_message));
+			memmove(send_message, send_message + 1, strlen(send_message));
     		send_message[strlen(send_message)] = '\0';
     		sendFile(sock, send_message);
     		continue;
@@ -144,11 +139,8 @@ void *recv_thread_func(void *sockfd)
 		int n = read(sock, recv_message , sizeof(recv_message));
 		if (n < 256 ) recv_message[n] = '\0';
 
-
 		if (strlen(recv_message) > 0 && recv_message[0] == '#') {
-			printf("file session\n");
-			// n = read(sock, recv_message , sizeof(recv_message));
-			printf("%s\n", recv_message);
+			printf("File session ... \n");
 			memmove(recv_message, recv_message + 1, strlen(recv_message));
 			recv_message[strlen(recv_message)] = '\0';
 			char *search = ",";
@@ -170,8 +162,7 @@ void *recv_thread_func(void *sockfd)
 			printf("User %s invite you chat with him , accept ? [y/n]\n", recv_message);
 			continue;
 		}
-
-		printf("%s\n", recv_message);
+		printf("%s\n", recv_message);	
 	}
 }
 /////////////////////////////////
@@ -199,7 +190,7 @@ void recvFile(int sock, char *filename){
 		int n;
 		while (1){
 			n = read(sock, data, sizeof(data));
-			if(n > 0){
+			if (n > 0){
 				printf("n: %d\n", n);
 				fwrite(data, 1, n, wf);
 				fsize -= n;
@@ -258,4 +249,8 @@ void sendFile(int sock, char *filename){
 	fclose(rf);
 	printf("Send successful %s\n", filename);
 	printf("%s\n", "--------------");
+}
+void rFCaTrim( char str[]) {
+	memmove(str, str + 1, strlen(str));
+	str[strlen(str)] = '\0';	
 }
