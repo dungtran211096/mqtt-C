@@ -9,11 +9,11 @@ CFLAGS  = -Wall
 # the list of header files
 #INCL   = server.h
 #the list of source files
-SRC = server.c
+SRC = client.c
 OBJ = $(SRC:.c=.o)
 
 # the build target executable:
-TARGET = server
+TARGET = client
 
 $(TARGET): $(OBJ)
 	$(CC) -pthread $(CFLAGS) -o $(TARGET) $(OBJ)
@@ -22,3 +22,4 @@ $(OBJ): $(INCL)
 
 clean:
 	$(RM) $(TARGET) $(OBJ)
+	$(RM) aloxo abbaba test.gz 1024

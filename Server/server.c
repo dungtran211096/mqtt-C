@@ -190,7 +190,7 @@ void *connection_handler(void *connfd)
 			// doc tin nhan tu client
 			int n = read(sock, message, sizeof(message));
 			// neu client gui '@' thi dong ket noi
-			if (strcmp(message, "@") == 0) {
+			if (message[0] == '@') {
 				printf("User %s end connect\n", users[cur_index].name);
 				users[cur_index].useFlag = 0;
 				close(sock);
@@ -274,39 +274,71 @@ void sendFiletoChannel(char *filename, int cur_index) {
 	}
 }
 void sendFile(int sock, char *filename){
-	FILE *rf = fopen(filename, "rb");
+	char filesize[1024];
 	char data[1024];
-	while(1) {
-		int j = fread(data, 1, 1024 , rf);
-		if ( j == 0) {
-			data[0] = '\0';
-			j = 1;
+	FILE *rf = fopen(filename, "rb");
+	if(rf){
+		memset(filesize, '0', sizeof(filesize));
+
+		/**/
+		fseek(rf, 0, SEEK_END);
+		int fsize = ftell(rf);
+		rewind(rf);
+		/****/
+		sprintf(filesize, "%d", fsize);
+		printf("Size of file: %d\n", fsize);
+		send(sock, filesize, sizeof(data), 0);
+		memset(filesize, '0', sizeof(filesize));
+
+		while(1) {
+			int j = fread(data, 1, 1024 , rf);
+			if ( j == 0) {
+				data[0] = '\0';
+				j = 1;
+			}
+			int nw = write(sock, data, j);
+			printf("nw = %d\n", nw);
+			if (nw < 1024) break;
 		}
-		int nw = write(sock, data, j);
-		printf("nw = %d\n", nw);
-		if (nw < 1024) break;
+		memset(data, '0', sizeof(data));
+	    fclose(rf);
+	    printf("Send successful %s\n", filename);
 	}
-    fclose(rf);
-    printf("Send successful %s\n", filename);
+	else{
+		printf("%s\n", "File ko ton tai");
+		sprintf(filesize, "0");
+		send(sock, filesize, sizeof(data), 0);
+		close(sock);
+	}
 }
 void recvFile(int sock, char *filename){
 	char data[1024];
 	FILE *wf = fopen(filename, "wb+");
-	if (!wf) {
-		puts("Cant open file");
+	if (wf) {
+		// recv filesize tu client 
+		read(sock, data, sizeof(data));
+		int filesize = atoi(data);
+		printf("Fileszie = %d\n", filesize);
+		if(filesize == 0){
+			printf("%s\n","file cant receive");
+			close(sock);
+		}
+		else{
+			while (1){
+				data[0] = '\0';
+				int n = read(sock, data, sizeof(data));
+				int j = fwrite(data, 1, n, wf);
+				if (j < 1024) break;
+			}
+			printf("Downloaded successful filename%s\n", filename );
+			fclose(wf);
+		}
 	}
-	// recv filesize tu client 
-	read(sock, data, sizeof(data));
-	int filesize = atoi(data);
-	printf("Fileszie = %d\n", filesize);
-	while (1){
-		data[0] = '\0';
-		int n = read(sock, data, sizeof(data));
-		int j = fwrite(data, 1, n, wf);
-		if (j < 1024) break;
+	else{
+		printf("%s\n", "Cant open file");
+		close(sock);
 	}
-	printf("Downloaded successful filename%s\n", filename );
-	fclose(wf);
+
 }
 void sendUserList( int sock , int cur_index) {
 	int j;
