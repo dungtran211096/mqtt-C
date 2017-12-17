@@ -50,6 +50,11 @@ typedef struct {
 	int useFlag;
 } User;
 
+typedef struct {
+	char Cname[256];
+	int listuser[100];
+} Map;
+
 // danh sach users
 User users[MAX_CLI];
 // bien toan cuc i, chi so dat den hien tai cua list users
@@ -286,6 +291,7 @@ void *connection_handler(void *connfd)
 
 void sendMessagetoChannel(char message[] , int cur_index) {
 	printf("sendMEss(): %s\n", message);
+	pthread_mutex_lock(&counter_mutex);
 	int k ;
 	for (k = 0; k <= i - 1 ; k++){
 		if (users[k].useFlag == 1 && k != cur_index){
@@ -297,18 +303,21 @@ void sendMessagetoChannel(char message[] , int cur_index) {
 			}
 		}
 	}
+	pthread_mutex_unlock(&counter_mutex);
 }
 void sendFiletoChannel(char *filename, int cur_index) {
+	pthread_mutex_lock(&counter_mutex);
 	int k ;
 	for (k = 0; k <= i - 1 ; k++){
 		if (users[k].useFlag == 1 && k != cur_index){
-			if (k != cur_index){
+			if (strcmp(users[k].channel.name , users[cur_index].channel.name) == 0){
 				printf("Send file to user %d\n", k);
 				sendFile(users[k].sockfd, filename);
 				printf("Done\n");
 			}
 		}
 	}
+	pthread_mutex_unlock(&counter_mutex);
 }
 void sendFile(int sock, char *filename){
 	char data[1024];
