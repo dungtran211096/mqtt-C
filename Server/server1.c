@@ -114,7 +114,7 @@ void subcribeFile(int sock, char *filename){
 void publicList( int sock ) {
 	int i,j;
 	char list[MESSLEN];
-	strcpy(list, "List User :\n");
+	strcpy(list, "\nbox>User list :\n");
 	for (i = 0; i < CH_TEMP; ++i)
 	{	
 		if( channels[i].useFlag == 1) {
@@ -391,7 +391,7 @@ void *connection_handler(void *connfd)
 				User invite_user = getUserbyName(message);
 				if (invite_user.useFlag == 0 ) {
 					char res[MESSLEN];
-					strcpy(res, "User khong ton tai !");
+					strcpy(res, "\nbox>User doesnt exist !");
 					write(sock, res , sizeof(res));
 					printf("Khong tim thay user '%s' \n", message );
 					continue;
@@ -438,17 +438,17 @@ void *connection_handler(void *connfd)
 						addUserToChannel(cur_user, index);
 						listUser(index);
 						char mess[MESSLEN];
-						sprintf(mess, "You joined channel '%s'", channels[index].name );
+						sprintf(mess, "\nbox>You are joined channel '%s'", channels[index].name );
 						write(cur_user.sockfd , mess , sizeof(mess));
 						strcpy(mess, "");
-						sprintf(mess, "User '%s' join channel, lets talk ...", cur_user.name);
+						sprintf(mess, "\nbox>User '%s' is joined channel, lets start ...", cur_user.name);
 						publicMessagetoChannel(cur_user.sockfd , mess , index);
 						cur_index = index;
 						continue;
 					}
 					else {
 						char mess[MESSLEN];
-						sprintf(mess, "You can joined this channel %s ", message);
+						sprintf(mess, "\nbox>You can join this channel %s ", message);
 						write(cur_user.sockfd , mess , sizeof(mess));
 						continue;
 					}
@@ -456,7 +456,7 @@ void *connection_handler(void *connfd)
 				//channel khong ton tai
 				else {
 					char mess[256];
-					sprintf(mess, "You joined channel '%s'", message);
+					sprintf(mess, "\nbox>You is joined channel '%s'", message);
 					write(sock, mess ,sizeof(mess));
 					int check_index = getUserChannelIndex(cur_user.name);
 					printf("User '%s' is in channel '%d'\n", cur_user.name , check_index);
@@ -509,14 +509,14 @@ void *connection_handler(void *connfd)
 					clearEmptyChannel();
 					cur_index = send_invite_ci;
 
-					sprintf(message, "User %s accept chat with you", cur_user.name);
+					sprintf(message, "\nbox>User %s accepts chat invitation from you", cur_user.name);
 					write(inv_user.sockfd, message, sizeof(message));
-					sprintf(message, "Two you in channel %s", channels[cur_index].name);
+					sprintf(message, "\nbox>Both of you are in channel %s", channels[cur_index].name);
 					write(inv_user.sockfd, message, sizeof(message));
 					write(cur_user.sockfd, message, sizeof(message));
 				}
 				else {
-					sprintf(message, "User %s does not accept chat with you", cur_user.name);
+					sprintf(message, "\nbox>User %s does not accept chat invitation you", cur_user.name);
 					write(inv_user.sockfd, message, sizeof(message));
 				}
 				continue;
@@ -531,7 +531,7 @@ void *connection_handler(void *connfd)
     			message[strlen(message)] = '\0';
 
     			printf("User %s want to send file '%s'\n", cur_user.name, message);
-    			sprintf(mess_send, "#%s,%s,%d", cur_user.name, message, cur_user.sockfd );
+    			sprintf(mess_send, "\nbox>File information; #%s,%s,%d", cur_user.name, message, cur_user.sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
 				//gui thong bao den cac client khac
     			if ( cur_index == -1 ){
@@ -553,7 +553,7 @@ void *connection_handler(void *connfd)
 
 			if ( cur_index == -1 ) {
 				char warning[MESSLEN];
-				strcpy(warning, "You dont have a channel");
+				strcpy(warning, "\nbox>You are not in any channels");
 				write(cur_user.sockfd , warning , sizeof(warning));
 				printf("Nhan duoc message '%s' tu user '%s', nhung k gui den channel nao !\n", message , cur_user.name );
 			}
