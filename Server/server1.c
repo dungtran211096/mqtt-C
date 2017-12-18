@@ -153,6 +153,7 @@ int findIndex (){
 }
 
 User getUserbyName(char *name){
+	pthread_mutex_lock(&mutex1);
 	printf("findUser() : find user name '%s'\n", name);
 	int i, j;
 	User res_user;
@@ -162,15 +163,16 @@ User getUserbyName(char *name){
 		printf("findUser() : Finding in channel[%d] . .. \n", i );
 		for ( j = 0; j < MAX_USR; ++j)
 		{
-			printf("findUser() : user[%d].name = '%s'\n", j ,channels[i].users[j].name );
 			if ( strcmp(name, channels[i].users[j].name) == 0 ) {
 				printf("findUser(): found user '%s'\n", channels[i].users[j].name);
 				res_user =  channels[i].users[j];
+				pthread_mutex_unlock(&mutex1);
 				return res_user;
 			}
 		}		
 	}
-	printf("findUser(): not found user '%s'\n", name);
+	printf("findUser(): User not found '%s'\n", name);
+	pthread_mutex_unlock(&mutex1);
 	return res_user;
 }
 void createChannel(int index , char *channel){
