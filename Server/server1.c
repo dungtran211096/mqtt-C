@@ -22,8 +22,6 @@ typedef struct {
 	int useFlag;
 } User;
 
-User users[10];
-
 typedef struct {
 	int type ; 
 	char name[MESSLEN]; 
@@ -362,6 +360,12 @@ void *connection_handler(void *connfd)
 			// NGAT KET NOI
 			if (message[0] == '@') {
 				printf("User %s end connect\n", cur_user.name);
+				int check_index = getUserChannelIndex(cur_user.name);
+				printf("User '%s' is in channel '%d'\n", cur_user.name , check_index);
+				if (check_index != -1 ) {
+					clearUser(check_index, cur_user.name);
+				}
+				clearEmptyChannel();
 				cur_user.useFlag = 0;
 				close(sock);
 				break;
