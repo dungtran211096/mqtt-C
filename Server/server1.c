@@ -21,6 +21,8 @@ typedef struct {
 	int useFlag;
 } User;
 
+User users[10];
+
 typedef struct {
 	int type ; 
 	char name[256]; 
@@ -104,7 +106,6 @@ void subcribeFile(int sock, char *filename){
 }
 void publicList( int sock ) {
 	pthread_mutex_lock(&counter_mutex);
-	int i;
 	// for (int i = 0; i < CH_TEMP; ++i)
 	// {
 
@@ -143,7 +144,7 @@ User getUserbyName(char *name){
 		}		
 	}
 	pthread_mutex_unlock(&counter_mutex);
-	// return NULL;
+	exit(0);
 }
 void createChannel(int index , char *channel){
 	strcpy(channels[index].name, channel);
@@ -258,9 +259,10 @@ void *connection_handler(void *connfd)
 		cur_user.useFlag = 1;
 		cur_user.sockfd = sock;
 
-		sendUserList(cur_user.sockfd);
+		publicList(sock);
 
 		char message[256];
+		int cur_index = -1;
     	while(1)
 		{	
 			// doc tin nhan tu client
@@ -280,7 +282,7 @@ void *connection_handler(void *connfd)
 				rFCaTrim(message);
 				printf("find users '%s'\n", message);
 				// find user with the name client want
-				int recv_sock = getUserbyName(message).sock;
+				int recv_sock = getUserbyName(message).sockfd;
 				if (recv_sock == -1) {
 					char res[MESSLEN];
 					strcpy(res, "User khong ton tai !");
@@ -301,6 +303,7 @@ void *connection_handler(void *connfd)
 				if (index != -1){ 
 					if (channels[index].type == 0) {
 						addUserToChannel(cur_user, index);
+						cur_index = index;
 						continue;
 					}
 					else {
@@ -313,8 +316,9 @@ void *connection_handler(void *connfd)
 					sprintf(mess, "You joined channel %s", message);
 					write(sock, mess ,sizeof(mess));
 					index = findIndex(); 
-					createChannel(index , message)
-					addUserToChannel(index, cur_user);
+					createChannel(index , message);
+					addUserToChannel(cur_user, index);
+					cur_index = index;
 					continue;				
 				}
 			}
@@ -334,22 +338,24 @@ void *connection_handler(void *connfd)
 				if (invite_user == NULL) {
 					continue;
 				}
-				int inv_user = getUserbyName( invite_user );
-				if (inv_user == NULL ) {
-					printf("Cant find user xx!\n");
-					continue;
-				}
+				User inv_user = getUserbyName( invite_user );
+				// if (inv_user) {
+				// 	printf("Cant find user xx!\n");
+				// 	continue;
+				// }
 				printf(" !!! mess = '%s'\n", message);
 				if (message[0] == 'y') {
+					int index = findIndex();
 					char name[MESSLEN];
-					sprintf(name, "%s%d%d", "private", cur_user.sock, inv_user_sock);
+					sprintf(name, "%s%d%d", "private", cur_user.sockfd, inv_user.sockfd);
 					createChannel(findIndex(), name);
 					addUserToChannel(cur_user, index);
 					addUserToChannel(inv_user, index);
+					cur_index = index;
 					channels[index].type = 1;
 					sprintf(message, "User %s accept chat with you", cur_user.name);
 					write(inv_user.sockfd, message, sizeof(message));
-					sprintf(message, "Two you in channel %s", cur_user.channel.name);
+					sprintf(message, "Two you in channel %s", channels[cur_index].name);
 					write(inv_user.sockfd, message, sizeof(message));
 					write(cur_user.sockfd, message, sizeof(message));
 				}
@@ -372,11 +378,12 @@ void *connection_handler(void *connfd)
     			sprintf(mess_send, "#%s,%s,%d", cur_user.name, message, cur_user.sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
 				//gui thong bao den cac client khac
-				publicMessagetoChannel(mess_send, index);
+
+				publicMessagetoChannel(mess_send, cur_index);
 				// nhan file tu file sender 
 				subcribeFile(sock, message);
 				// gui file cho cac client khac
-				publicFiletoChannel(message, i);
+				publicFiletoChannel(message, cur_index);
 				continue;
 			}		
 			// END GUI FILE

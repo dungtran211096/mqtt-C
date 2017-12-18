@@ -9,7 +9,7 @@ CFLAGS  = -Wall
 # the list of header files
 #INCL   = server.h
 #the list of source files
-SRC = server.c
+SRC = server1.c
 OBJ = $(SRC:.c=.o)
 
 # the build target executable:
