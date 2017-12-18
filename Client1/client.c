@@ -47,23 +47,23 @@ int main(int argc, char const *argv[])
 	}
 	// ket noi den server
 	if (connect(socket_desc, (struct sockaddr *)&servaddr, slen) == -1){
-		printf("%s\n", "Error in connect");
+		printf("%s\n", "box>Error in connect");
 		return 1;
 	}
 	else { 
-		printf("Connected to server %s:%d\n", inet_ntoa(*(struct in_addr*)&servaddr.sin_addr) , 8888);
+		printf("box>Connected to server %s:%d\n", inet_ntoa(*(struct in_addr*)&servaddr.sin_addr) , 8888);
 		printf("%s\n", "----------------------\n");
 	}
 	// nhap username va gui cho server 
 	char username[256];
 	// char channelName[256];
-	printf("%s", "Nhap username:");
+	printf("%s", "box>Username:");
 	fgets(username, sizeof(username), stdin);
 	//gui den server username
 	write(socket_desc, username , sizeof(username));
 	// nhan lai list user hien tai, va in ra man hinh
 	char list_users[1000];
-	printf("reading list user from server ... .\n");
+	printf("\nbox>Reading list user from server ... .\n");
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("%s\n", list_users );
 	
@@ -73,7 +73,7 @@ int main(int argc, char const *argv[])
 	if( pthread_create( &send_thread_id , NULL ,  send_thread_func , (void*) &socket_desc) < 0 
 	||  pthread_create( &recv_thread_id , NULL ,  recv_thread_func , (void*) &socket_desc) < 0 )
     {
-      	perror("could not create thread");
+      	perror("box>Could not create thread");
       	return 1;
     }
   	// doi thread send ket thuc thi ket thuc chuong trinh
@@ -90,13 +90,14 @@ void *send_thread_func(void *sockfd)
 	char send_message[256];
 	printf("%s\n", "\n------------------------------------------------------------------------------");
 	printf("| NOTE:\t\t\t\t\t\t\t\t\t     |\n");
-	printf("| > Tin nhan dau tien la dang ky channel\t\t\t\t     |\n");
-	printf("| > Neu muon chat rieng: $username \t\t\t\t\t     |\n");
-	printf("| > Gui file: #filename ... \t\t\t\t\t\t     |\n");
-	printf("| > Dong y hoac khong dong y chat : !y hoac !n\t\t\t\t     |\n");
+	printf("| > Register channel: %%channel_name\t\t\t\t\t     |\n");
+	printf("| > Private chat: $user_name \t\t\t\t\t     |\n");
+	printf("| > Check online users: !list\t\t\t\t\t\t     |\n");
+	printf("| > Send file: #filename ... \t\t\t\t\t\t     |\n");
+	printf("| > Accept or not accept chat invitation: !y | !n\t\t\t\t     |\n");
 
 	printf("%s\n", "------------------------------------------------------------------------------\n");
-	printf("Cuoc tro chuyen bat dau...\n\n");
+	printf("box>Start...\n\n");
 
 	while(1)
 	{	
@@ -121,7 +122,7 @@ void *send_thread_func(void *sockfd)
 		// neu user gui '@' thi  dong ket noi
 		if( send_message[0] == '@') {
 			write(sock, send_message , sizeof(send_message));
-			printf("%s\n", "End connection");
+			printf("%s\n", "\nbox>End connection");
 			exit(1)	;
 		}
 		if ( send_message[0] == '#' ) {
@@ -130,17 +131,17 @@ void *send_thread_func(void *sockfd)
 			memmove(filename, filename + 1, strlen(filename));
     		filename[strlen(filename)] = '\0';
 
-    		printf("You send file '%s' \n", filename );
+    		printf("\nbox>You send file '%s' \n", filename );
 
     		FILE *check = fopen(filename, "rb");
     		if ( check) {
  				write(sock, send_message , sizeof(send_message));
-    			printf("Check oke ... sending...\n");
+    			//printf("Check oke ... sending...\n");
     			fclose(check);
     			sendFile(sock, filename);
     		}
     		else{
-    			printf("File does not exist\n");
+    			printf("\nbox>File does not exist\n");
     		}
     		continue;
 		}
@@ -161,26 +162,26 @@ void *recv_thread_func(void *sockfd)
 		if (n < 256 ) recv_message[n] = '\0';
 
 		if (strlen(recv_message) > 0 && recv_message[0] == '#') {
-			printf("File session ... \n");
+			//printf("File session ... \n");
 			memmove(recv_message, recv_message + 1, strlen(recv_message));
 			recv_message[strlen(recv_message)] = '\0';
 			char *search = ",";
 			char *sender = strtok(recv_message, search);
 			char *filename = strtok(NULL, search);
-			printf("User %s send file %s to you\n", sender, filename );
+			printf("\nbox>User %s sends file %s to you\n", sender, filename );
 			// nhan file tu server 
 			recvFile(sock, filename);
-			printf("recvFile is done !!!\n");
+			//printf("recvFile is done !!!\n");
 			continue;
 		}
 
 		if ( strlen(recv_message) > 0 && recv_message[0] == '!' ) {
-			printf("An invite message ... \n");
+			printf("\nbox>An invite message ... \n");
 			memmove(recv_message, recv_message + 1, strlen(recv_message));
 			recv_message[strlen(recv_message)] = '\0';
 			strcpy(invite_cache, recv_message );
-			printf("Set invite_cache = '%s'\n", invite_cache );
-			printf("User %s invite you chat with him , accept ? [y/n]\n", recv_message);
+			//printf("box>Set invite_cache = '%s'\n", invite_cache );
+			printf("\nbox>User %s invites you chat with him , accept ? [y/n]\n", recv_message);
 			continue;
 		}
 		printf("%s\n", recv_message);	
@@ -197,11 +198,11 @@ void recvFile(int sock, char *filename){
 			int j = fwrite(data, 1, n, wf);
 			if (j < 1024) break;
 		}
-		printf("Downloaded successful filename%s\n", filename );
+		printf("\nbox>Downloaded successful file %s\n", filename );
 		fclose(wf);
 	}
 	else {
-		printf("Cant download file %s\n", filename );
+		printf("\nbox>Cant download file %s\n", filename );
 	}
 }
 	
@@ -219,10 +220,10 @@ void sendFile(int sock, char *filename){
 			if (nw < 1024) break;
 		}
 	    fclose(rf);
-	    printf("Send successful %s\n", filename);
+	    printf("\nbox>File %s is sended success\n", filename);
 	}
 	else{
-		printf("File %s does not exist\n", filename );
+		printf("\nbox>File %s does not exist\n", filename );
 	}
 }
 void rFCaTrim( char str[]) {
