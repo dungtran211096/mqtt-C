@@ -269,7 +269,7 @@ void clearEmptyChannel (){
 	pthread_mutex_lock(&mutex1);
 	printf("Clear():\n");
 	int i ,j;
-	for (i = 0; i < CH_TEMP; ++i)
+	for (i = 1; i < CH_TEMP; ++i)
 	{
 		int isEmpty = 1;
 		for ( j = 0; j < channels[i].cur; ++j)
@@ -289,6 +289,11 @@ void clearEmptyChannel (){
 }
 int main(int argc, char const *argv[])
 {
+	channels[0].users[0].useFlag = 0;
+	channels[0].useFlag = 1;
+	strcpy(channels[0].name , "PUBLIC");
+	CH_TEMP++;
+	
 	int socket_desc = 0 ; 
 	struct sockaddr_in cliaddr, servaddr; 
 	socklen_t clilen; 	
@@ -350,6 +355,7 @@ void *connection_handler(void *connfd)
 
 		publicList(sock);
 
+		addUserToChannel( cur_user , 0);
 		char message[256];
 		int cur_index = -1;
 
