@@ -63,9 +63,10 @@ int main(int argc, char const *argv[])
 	write(socket_desc, username , sizeof(username));
 	// nhan lai list user hien tai, va in ra man hinh
 	char list_users[1000];
+	printf("reading list user from server ... .\n");
 	read(socket_desc, list_users, sizeof(list_users));
 	printf("%s\n", list_users );
-
+	
 	// *** nhan va gui tin nhan voi server
 	//tao thread nhan message va thread viet message
 	pthread_t send_thread_id, recv_thread_id;
