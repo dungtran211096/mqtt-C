@@ -50,11 +50,6 @@ typedef struct {
 	int useFlag;
 } User;
 
-typedef struct {
-	char Cname[256];
-	int listuser[100];
-} Map;
-
 // danh sach users
 User users[MAX_CLI];
 // bien toan cuc i, chi so dat den hien tai cua list users
