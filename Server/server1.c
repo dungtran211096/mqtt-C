@@ -293,7 +293,7 @@ int main(int argc, char const *argv[])
 	channels[0].useFlag = 1;
 	strcpy(channels[0].name , "PUBLIC");
 	CH_TEMP++;
-	
+
 	int socket_desc = 0 ; 
 	struct sockaddr_in cliaddr, servaddr; 
 	socklen_t clilen; 	
@@ -438,6 +438,9 @@ void *connection_handler(void *connfd)
 						char mess[MESSLEN];
 						sprintf(mess, "You joined channel '%s'", channels[index].name );
 						write(cur_user.sockfd , mess , sizeof(mess));
+						strcpy(mess, "");
+						sprintf(mess, "User '%s' join channel, lets talk ...", cur_user.name);
+						publicMessagetoChannel(cur_user.sockfd , mess , index);
 						cur_index = index;
 						continue;
 					}
