@@ -190,6 +190,7 @@ void createChannel(int index , char *channel){
 
 void addUserToChannel( User user , int chan_index ) {
 	printf("------------------In addUserToChannel Index()\n");
+	pthread_mutex_lock(&mutex1);
 	int i ;
 	for (i = 0; i < MAX_USR ; ++i)
 	{
@@ -201,6 +202,7 @@ void addUserToChannel( User user , int chan_index ) {
 			break;
 		}
 	}
+	pthread_mutex_unlock(&mutex1);
 	printf("ADD user '%s' to channel '%s' with index = %d \n", user.name, channels[chan_index].name, i );
 	printf("------------------End addUserToChannel Index()\n");
 }
