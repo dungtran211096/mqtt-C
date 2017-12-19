@@ -531,7 +531,7 @@ void *connection_handler(void *connfd)
     			message[strlen(message)] = '\0';
 
     			printf("User %s want to send file '%s'\n", cur_user.name, message);
-    			sprintf(mess_send, "\nbox>File information; #%s,%s,%d", cur_user.name, message, cur_user.sockfd );
+    			sprintf(mess_send, "#%s,%s,%d", cur_user.name, message, cur_user.sockfd );
     			printf("Thong tin file gui den cac user la %s\n", mess_send);
 				//gui thong bao den cac client khac
     			if ( cur_index == -1 ){
