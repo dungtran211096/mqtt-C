@@ -91,10 +91,10 @@ void *send_thread_func(void *sockfd)
 	printf("%s\n", "\n------------------------------------------------------------------------------");
 	printf("| NOTE:\t\t\t\t\t\t\t\t\t     |\n");
 	printf("| > Register channel: %%channel_name\t\t\t\t\t     |\n");
-	printf("| > Private chat: $user_name \t\t\t\t\t     |\n");
+	printf("| > Private chat: $user_name \t\t\t\t\t\t     |\n");
 	printf("| > Check online users: !list\t\t\t\t\t\t     |\n");
 	printf("| > Send file: #filename ... \t\t\t\t\t\t     |\n");
-	printf("| > Accept or not accept chat invitation: !y | !n\t\t\t\t     |\n");
+	printf("| > Accept or not accept chat invitation: !y | !n\t\t\t     |\n");
 
 	printf("%s\n", "------------------------------------------------------------------------------\n");
 	printf("box>Start...\n\n");
