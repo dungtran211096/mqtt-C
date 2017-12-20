@@ -1,5 +1,5 @@
 # BTL_NetworkProgramming
-Chat program base on MQTT protocol 
+Chat program bases on MQTT protocol 
 
 
 ## Function
