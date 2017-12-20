@@ -120,7 +120,7 @@ void publicList( int sock ) {
 		if( channels[i].useFlag == 1) {
 			strcat(list, channels[i].name);
 			strcat(list, ": ");
-			for (j = 0; j < MAX_USR; ++j)
+			for (j = 0; j < channels[i].cur; ++j)
 			{
 				if ( channels[i].users[j].useFlag == 1) {
 					strcat(list, channels[i].users[j].name);
@@ -161,7 +161,7 @@ User getUserbyName(char *name){
 	for ( i = 0; i < CH_TEMP; ++i)
 	{
 		printf("findUser() : Finding in channel[%d] . .. \n", i );
-		for ( j = 0; j < MAX_USR; ++j)
+		for ( j = 0; j < channels[i].cur; ++j)
 		{
 			if ( strcmp(name, channels[i].users[j].name) == 0 ) {
 				printf("findUser(): found user '%s'\n", channels[i].users[j].name);
@@ -192,16 +192,22 @@ void addUserToChannel( User user , int chan_index ) {
 	printf("------------------In addUserToChannel Index()\n");
 	pthread_mutex_lock(&mutex1);
 	int i ;
-	for (i = 0; i < MAX_USR ; ++i)
+	int index = -1;
+	for (i = 0; i < channels[i].cur ; ++i)
 	{
 		if (channels[chan_index].users[i].useFlag == 0) {
-			channels[chan_index].users[i] = user ;
-			channels[chan_index].cur ++;
-			int temp = channels[chan_index].cur ;
-			channels[chan_index].users[temp].useFlag = 0 ;
+			index = i;
 			break;
 		}
 	}
+	if (index == -1 ) {
+		index = channels[chan_index].cur;
+		channels[chan_index].cur++;
+	}
+	channels[chan_index].users[index] = user ;
+	int temp = channels[chan_index].cur ;
+	channels[chan_index].users[temp].useFlag = 0 ;
+
 	pthread_mutex_unlock(&mutex1);
 	printf("ADD user '%s' to channel '%s' with index = %d \n", user.name, channels[chan_index].name, i );
 	printf("------------------End addUserToChannel Index()\n");
