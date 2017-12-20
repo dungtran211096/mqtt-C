@@ -454,7 +454,7 @@ void *connection_handler(void *connfd)
 					}
 					else {
 						char mess[MESSLEN];
-						sprintf(mess, "\nbox>You can join this channel %s ", message);
+						sprintf(mess, "\nbox>You can't join this channel %s ", message);
 						write(cur_user.sockfd , mess , sizeof(mess));
 						continue;
 					}
