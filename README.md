@@ -16,8 +16,8 @@ Chat program bases on MQTT protocol
 Server 
 
 ```
-$ git clone https://github.com/locvx1234/BTL_NetworkProgramming.git
-$ cd BTL_NetworkProgramming/server 
+$ git clone https://github.com/dungtran211096/mqtt-C.git
+$ cd mqtt-C/Server 
 $ make 
 $ ./server
 ```
@@ -25,8 +25,8 @@ $ ./server
 Client 
 
 ```
-$ git clone https://github.com/locvx1234/BTL_NetworkProgramming.git
-$ cd BTL_NetworkProgramming/client
+$ git clone https://github.com/dungtran211096/mqtt-C.git
+$ cd mqtt-C/Client
 $ make
 $ ./client <IP_server>
 ```
